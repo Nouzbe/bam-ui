@@ -1,0 +1,24 @@
+{
+  "name": "bam-table",
+  "version": "1.0.0",
+  "description": "pure presentational table React Component",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "babel src --out-dir lib",
+    "prepack": "npm run build",
+    "eslint": "eslint --ext .jsx,.js src/",
+    "start": "npm run build -- --watch"
+  },
+  "author": "bam",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "^15.6.1"
+  },
+  "dependencies": {
+    "bam-scroller": "^1.0.0",
+    "glamor": "^3.0.0-3"
+  }
+}

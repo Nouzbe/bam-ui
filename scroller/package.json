@@ -1,0 +1,24 @@
+{
+  "name": "bam-scroller",
+  "version": "1.0.0",
+  "description": "React Component acting like a div with {height: '100%', width: '100%', overflow: 'auto'} and letting the opportunity to easily define the style of the scrollbar and custom scroll behaviors such as virtual scrolling",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "babel src --out-dir lib",
+    "prepack": "npm run build",
+    "eslint": "eslint --ext .jsx,.js src/",
+    "start": "npm run build -- --watch"
+  },
+  "author": "bam",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "^15.6.1",
+    "glamor": "^3.0.0-3"
+  },
+  "dependencies": {
+    "css-element-queries": "^0.4.0"
+  }
+}
