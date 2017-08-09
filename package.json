@@ -7,21 +7,10 @@
     "cross-spawn": "^5.1.0",
     "promise-serial": "^0.1.5"
   },
-  "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-react": "^6.24.1",
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb": "^15.0.2",
-    "eslint-plugin-import": "^2.6.1",
-    "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-react": "^7.1.0",
-    "react": "^15.6.1"
-  },
+  "devDependencies": {},
   "scripts": {
-    "all": "node all sequentially yarn",
-    "all start": "node all parallely yarn start",
-    "all prune": "node all sequentially yarn prune"
+    "setup": "node all sequentially yarn",
+    "start": "node all parallely yarn start"
   },
   "author": "bam",
   "license": "ISC"
