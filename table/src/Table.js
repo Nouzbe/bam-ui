@@ -17,79 +17,92 @@ class Table extends React.Component {
       data: [],
       rowHeights: {},
       columnWidths: {},
-      fullHeight: props.data.length * rowHeight,
-      containerTop: 0,
-      contentTop: 0
+      virtualHeight: props.data.length * rowHeight,
+      offsetTop: 0
     };
     this.onScroll = this.onScroll.bind(this);
     this.onColumnWidthChange = this.onColumnWidthChange.bind(this);
     this.onRowHeightChange = this.onRowHeightChange.bind(this);
     this.getNumberOfRowsThatFit = this.getNumberOfRowsThatFit.bind(this);
-    this.getContainerTop = this.getContainerTop.bind(this);
-    this.getContentTop = this.getContentTop.bind(this);
+    this.getTotalHeight = this.getTotalHeight.bind(this);
     this.refresh = this.refresh.bind(this);
   }
 
-  // returns the height that is above the top idx
-  getContentTop(topIdx) {
-    const editedRowHeightsScrolledPast = Object.keys(this.state.rowHeights).filter(idx => idx < topIdx);
-    const theirSum = editedRowHeightsScrolledPast.reduce((sum, idx) => sum + this.state.rowHeights[idx], 0);
-    return rowHeight * (topIdx - editedRowHeightsScrolledPast.length) + theirSum;
-  }
-
-  // returns the columns top so that when fully scrolled, the last cell's bottom is right at the bottom of the viewport
-  getContainerTop(scroll) {
-    return scroll !== undefined ? scroll * (this.state.fullHeight - (this.container.offsetHeight - headerHeight)):  this.state.containerTop;
-  }
-
-  getNumberOfRowsThatFit(idxFrom, upward) {
-    let currentIdx = idxFrom;
-    let requiredHeight = 0;
-    while(
-      currentIdx >= 0 && 
-      currentIdx < this.props.data.length &&
-      requiredHeight < this.container.offsetHeight
-    ) {
-      upward ? currentIdx-- : currentIdx++;
-      const editedRowHeight = this.state.rowHeights[currentIdx];
-      requiredHeight += editedRowHeight !== undefined ? editedRowHeight : rowHeight; 
+  getFirstFittingRow(containerOffsetTop) {
+    let previousIdx = - 1;
+    let previousBottom = 0;
+    for(let i = 0; i < Object.keys(this.state.rowHeights).length; i++) {
+      const idx = parseInt(Object.keys(this.state.rowHeights)[i], 10);
+      const height = this.state.rowHeights[idx];
+      const top = previousBottom + (idx - previousIdx - 1) * rowHeight;
+      if(top > containerOffsetTop) {
+        break;
+      }
+      const bottom = top + height;
+      if(bottom < containerOffsetTop) {
+        previousIdx = idx;
+        previousBottom = bottom;
+      }
+      else {
+        return [idx, top - containerOffsetTop];
+      }
     }
-    return (upward ? idxFrom - currentIdx : currentIdx - idxFrom) + 1;
+    const topIdx = previousIdx + 1 + Math.floor((containerOffsetTop - previousBottom) / rowHeight);
+    const offset = (previousBottom - containerOffsetTop) % rowHeight;
+    return [topIdx, offset];
+  }
+
+  getNumberOfRowsThatFit(idxFrom) {
+    let currentIdx = idxFrom + 1;
+    let requiredHeight = 0;
+    while(currentIdx < this.props.data.length && requiredHeight < this.container.offsetHeight) {
+      currentIdx++;
+      const editedRowHeight = this.state.rowHeights[currentIdx];
+      requiredHeight += editedRowHeight !== undefined ? editedRowHeight : rowHeight;
+    }
+    return currentIdx - idxFrom + 1;
   }
 
   onColumnWidthChange(colIdx, newWidth) {
     this.setState({columnWidths: Object.assign(this.state.columnWidths, {[colIdx]: newWidth})});
   }
 
+  getTotalHeight() {
+    return Object.keys(this.state.rowHeights).reduce((sum, idx) => {
+      return sum + this.state.rowHeights[idx] - rowHeight;
+    }, this.props.data.length * rowHeight);
+  }
+
   onRowHeightChange(rowIdx, newHeight) {
-    const previousHeight = this.state.rowHeights[rowIdx];
-    const deltaHeight = newHeight - (previousHeight !== undefined ? previousHeight : rowHeight);
     this.setState({
-      rowHeights: Object.assign(this.state.rowHeights, {[this.state.topIdx + rowIdx]: newHeight}),
-      fullHeight: this.state.fullHeight + deltaHeight
-    }, this.refresh);
+      rowHeights: Object.assign(this.state.rowHeights, {[this.state.topIdx + rowIdx]: newHeight})
+    }, () => {
+      this.setState({
+        virtualHeight: this.getTotalHeight()
+      }, this.refresh);
+    });
   }
 
   refresh() {
     this.setState({
-      data: this.props.data.slice(this.state.topIdx, this.state.topIdx + this.getNumberOfRowsThatFit(this.state.topIdx)),
-      contentTop: this.getContentTop(this.state.topIdx)
+      data: this.props.data.slice(this.state.topIdx, this.state.topIdx + this.getNumberOfRowsThatFit(this.state.topIdx))
     });
   }
 
   onScroll(scroll) {
-    if(this.state.fullHeight > this.container.offsetHeight) {
+    if(this.state.virtualHeight > this.container.offsetHeight || scroll === 0) {
+      const containerOffsetTop = scroll * (this.state.virtualHeight * (1 + 1 / this.props.data.length) - this.container.offsetHeight);
+      const [topIdx, offsetTop] = this.getFirstFittingRow(containerOffsetTop);
+      console.log('containerTop : ' + containerOffsetTop + ', top idx : ' + topIdx + ', offsetTop : ' + offsetTop + ', virtual height : ' + this.state.virtualHeight);
       this.setState({
-        topIdx: scroll * (this.props.data.length + 1 - this.getNumberOfRowsThatFit(this.props.data.length - 1, true)),
-        containerTop: this.getContainerTop(scroll),
+        topIdx,
+        offsetTop
       }, this.refresh);
     }
   }
 
   componentDidMount() {
-    this.setState({
-      data: this.props.data.slice(0, this.container.offsetHeight / rowHeight)
-    });
+    this.refresh();
   }
 
   render() {
@@ -106,7 +119,6 @@ class Table extends React.Component {
         onVerticalScroll={this.onScroll}
         virtualHeight={this.state.virtualHeight}
         verticalOffset={headerHeight}
-        onResize={this.refresh}
       >
         <div style={{height: '100%', width: fullWidth}}>
           {this.props.headers.map((h, idx) => (
@@ -115,13 +127,11 @@ class Table extends React.Component {
                 colIdx={idx} header={h} 
                 data={this.state.data.map(r => r[idx])}
                 headerHeight={headerHeight}
-                fullHeight={this.state.fullHeight}
-                containerTop={this.state.containerTop}
-                contentTop={this.state.contentTop}
                 columnWidth={this.state.columnWidths[idx] || columnWidth}
                 rowHeights={this.state.data.map((r, idx) => this.state.rowHeights[this.state.topIdx + idx] || rowHeight)}
                 onColumnWidthChange={this.onColumnWidthChange}
                 onRowHeightChange={this.onRowHeightChange}
+                offsetTop = {this.state.offsetTop}
               />
           ))}
         </div>

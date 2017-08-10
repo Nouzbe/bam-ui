@@ -20,11 +20,9 @@ class Column extends React.Component {
             <ColumnBody 
                 colIdx={this.props.colIdx} 
                 data={this.props.data}
-                height={this.props.fullHeight}
-                containerTop={this.props.containerTop}
-                contentTop={this.props.contentTop}
                 rowHeights={this.props.rowHeights}
-                onRowHeightChange={(idx, newHeight) => this.props.onRowHeightChange(idx, newHeight - this.props.headerHeight)}
+                onRowHeightChange={(idx, newHeight) => this.props.onRowHeightChange(idx, newHeight - this.props.headerHeight - this.props.offsetTop)}
+                offsetTop={this.props.offsetTop}
             />
         </div>
     }

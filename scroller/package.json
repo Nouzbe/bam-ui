@@ -1,6 +1,6 @@
 {
   "name": "bam-scroller",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React Component acting like a div with {height: '100%', width: '100%', overflow: 'auto'} and letting the opportunity to easily define the style of the scrollbar and custom scroll behaviors such as virtual scrolling",
   "files": [
     "lib"

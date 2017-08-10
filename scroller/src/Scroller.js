@@ -2,64 +2,80 @@ import React from 'react';
 import Scrollbar from './Scrollbar.js';
 import {ResizeSensor} from 'css-element-queries';
 
+const minHandleSize = 5;
+
 class Scroller extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            verticalScrollbarHeight: 100,
-            horizontalScrollbarWidth: 100,
-            top: 0,
-            left: 0
+            verticalHandleHeight: 100,
+            horizontalHandleWidth: 100,
+            verticalScroll: 0,
+            horizontalScroll: 0
         };
         this.onVerticalScroll = this.onVerticalScroll.bind(this);
         this.onHorizontalScroll = this.onHorizontalScroll.bind(this);
-        this.getSensitivity = this.getSensitivity.bind(this);
+        this.getVerticalSensitivity = this.getVerticalSensitivity.bind(this);
+        this.getHorizontalSensitivity = this.getHorizontalSensitivity.bind(this);
         this.getThickness = this.getThickness.bind(this);
-        this.getVerticalScrollbarHeight = this.getVerticalScrollbarHeight.bind(this);
-        this.getHorizontalScrollbarWidth = this.getHorizontalScrollbarWidth.bind(this);
+        this.getVerticalHandleHeight = this.getVerticalHandleHeight.bind(this);
+        this.getHorizontalHandleWidth = this.getHorizontalHandleWidth.bind(this);
+        this.getTop = this.getTop.bind(this);
+        this.getLeft = this.getLeft.bind(this);
         this.ref = this.ref.bind(this);
         this.refreshSizes = this.refreshSizes.bind(this);
         this.onResize = this.onResize.bind(this);
     }
-    getSensitivity() {
-        return this.props.sensitivity !== undefined ? this.props.sensitivity : 0.5;
+    getVerticalSensitivity() {
+        const factor = this.props.sensitivity !== undefined ? this.props.sensitivity : 1;
+        const sizeRate = (this.container && this.content) ? this.container.offsetHeight / (this.props.virtualHeight || this.content.scrollHeight) : 1;
+        return factor * sizeRate / 2000;
+    }
+    getHorizontalSensitivity() {
+        const factor = this.props.sensitivity !== undefined ? this.props.sensitivity : 1;
+        const sizeRate = (this.container && this.content) ? this.container.offsetWidth / (this.props.virtualWidth || this.content.scrollWidth) : 1;
+        return factor * sizeRate / 2000;
     }
     getThickness() {
         return this.props.thickness || 15;
     }
-    getVerticalScrollbarHeight() {
+    getVerticalHandleHeight() {
         if(this.props.virtualHeight !== undefined) {
-            return 100 * Math.min(this.container.offsetHeight / this.props.contentHeight, 1)
+            return 100 * Math.min(this.container.offsetHeight / this.props.virtualHeight, 1)
         }
         if(this.container !== undefined && this.content !== undefined) {
             return 100 * this.container.offsetHeight / this.content.scrollHeight;
         }
         return 100;
     }
-    getHorizontalScrollbarWidth() {
+    getHorizontalHandleWidth() {
         if(this.props.virtualWidth !== undefined) {
-            return 100 * Math.min(this.container.offsetWidth / this.props.contentWidth, 1);
+            return 100 * Math.min(this.container.offsetWidth / this.props.virtualWidth, 1);
         }
         if(this.container !== undefined && this.content !== undefined) {
             return 100 * this.container.offsetWidth / this.content.scrollWidth;
         }
         return 100;
     }
-    onVerticalScroll(relativeScroll) {
-        if(this.props.onVerticalScroll) {
-            this.props.onVerticalScroll(relativeScroll);
+    getTop() {
+        if(!this.props.onVerticalScroll && this.content) {
+            return - this.state.verticalScroll * (this.content.scrollHeight - this.content.offsetHeight);
         }
-        else {
-            this.setState({top: - relativeScroll * (this.content.scrollHeight - this.container.offsetHeight)});
-        }
+        return 0;
     }
-    onHorizontalScroll(relativeScroll) {
-        if(this.props.onHorizontalScroll) {
-            this.props.onHorizontalScroll(relativeScroll);
+    getLeft() {
+        if(!this.props.onHorizontalScroll && this.content) {
+            return - this.state.horizontalScroll * (this.content.scrollWidth - this.content.offsetWidth);
         }
-        else {
-            this.setState({left: - relativeScroll * (this.content.scrollWidth - this.container.offsetWidth)});
-        }
+        return 0;
+    }
+    onVerticalScroll(value) {
+        this.setState({verticalScroll: value});
+        this.props.onVerticalScroll ? this.props.onVerticalScroll(value) : null;
+    }
+    onHorizontalScroll(value) {
+        this.setState({horizontalScroll: value});
+        this.props.onHorizontalScroll ? this.props.onHorizontalScroll(value) : null;
     }
     ref(elt) {
         this.container = elt;
@@ -69,20 +85,26 @@ class Scroller extends React.Component {
     }
     refreshSizes() {
         this.setState({
-            verticalScrollbarHeight: this.getVerticalScrollbarHeight(),
-            horizontalScrollbarWidth: this.getHorizontalScrollbarWidth()
+            verticalHandleHeight: this.getVerticalHandleHeight(),
+            horizontalHandleWidth: this.getHorizontalHandleWidth()
         });
     }
     onResize() {
-        if(this.content.scrollWidth - this.content.offsetWidth < - this.state.left) {
-            this.setState({left: this.content.offsetWidth - this.content.scrollWidth});
+        const totalWidth = Math.max(this.props.virtualWidth || this.content.scrollWidth, this.content.scrollWidth);
+        if(totalWidth - this.content.offsetWidth < this.state.horizontalScroll * totalWidth) {
+            this.onHorizontalScroll((totalWidth - this.content.offsetWidth) / totalWidth);
+        }
+        const totalHeight = Math.max(this.props.virtualHeight || this.content.scrollHeight, this.content.scrollHeight);
+        if(totalHeight - this.content.offsetHeight < this.state.verticalScroll * totalHeight) {
+            this.onVerticalScroll((totalHeight - this.content.offsetHeight) / totalHeight);
         }
         this.refreshSizes();
-        this.props.onResize ? this.props.onResize() : null;
     }
-    componentDidReceiveProps() {
-        this.refreshSizes();
-    }
+    componentWillReceiveProps(nextProps) {
+        if(nextProps.virtualHeight !== this.props.virtualHeight || nextProps.virtualWidth !== this.props.virtualWidth) {
+            this.refreshSizes();
+        }
+    } 
     componentDidMount() {
         this.refreshSizes();
         ResizeSensor(this.content, this.onResize);
@@ -90,26 +112,36 @@ class Scroller extends React.Component {
     }
     render() {
         const thickness = this.getThickness();
-        const sensitivity = this.getSensitivity();
-        const isVerticalScrollbarVisible = this.state.verticalScrollbarHeight < 100;
-        const isHorizontalScrollbarVisible = this.state.horizontalScrollbarWidth < 100;
+        const isVerticalScrollbarVisible = this.state.verticalHandleHeight < 100;
+        const isHorizontalScrollbarVisible = this.state.horizontalHandleWidth < 100;
         return <div ref={this.ref} className={this.props.className} style={{height: '100%', width: '100%'}}>
             <div style={{height: isHorizontalScrollbarVisible ? `calc(100% - ${thickness}px)` : '100%', width: '100%'}}>
                 <div style={{float: 'left', height: '100%', width: isVerticalScrollbarVisible ? `calc(100% - ${thickness}px)` : '100%', position: 'relative', overflow: 'hidden'}}>
-                    <div ref={elt => this.content = elt} style={{position: 'relative', top: this.state.top, left: this.state.left, height: '100%', width: '100%', transition: 'top 50ms, left 50ms'}}> 
+                    <div 
+                        ref={elt => this.content = elt} 
+                        style={{
+                                position: 'relative', 
+                                top: this.getTop(), 
+                                left: this.getLeft(), 
+                                height: '100%', 
+                                width: '100%', 
+                                transition: 'top 50ms, left 50ms'
+                            }}
+                        > 
                         {this.props.children}
                     </div>
                 </div>
                 {isVerticalScrollbarVisible ? 
                     <Scrollbar 
                         offset={this.props.verticalOffset || 0}
-                        sensitivity={sensitivity}
-                        thickness={thickness}
-                        onScroll={this.onVerticalScroll}
+                        sensitivity={this.getVerticalSensitivity()}
+                        guideWidth={thickness}
                         container={this.container}
-                        size={this.state.verticalScrollbarHeight}
+                        handleSize={Math.max(minHandleSize, this.state.verticalHandleHeight) *this.container.offsetHeight / 100}
                         guideStyle={Object.assign(this.props.guideStyle || {}, {float: 'right'})}
                         handleStyle={this.props.handleStyle || {}}
+                        value={this.state.verticalScroll}
+                        onValueChange={this.onVerticalScroll}
                     /> 
                     : null
                 }
@@ -118,13 +150,14 @@ class Scroller extends React.Component {
                 <Scrollbar 
                     horizontal
                     offset={this.props.horizontalOffset || 0}
-                    sensitivity={sensitivity}
-                    thickness={thickness}
-                    onScroll={this.onHorizontalScroll}
+                    sensitivity={this.getHorizontalSensitivity()}
+                    guideHeight={thickness}
                     container={this.container}
-                    size={this.state.horizontalScrollbarWidth}
+                    handleSize={Math.max(minHandleSize, this.state.horizontalHandleWidth) * this.container.offsetWidth / 100}
                     guideStyle={this.props.guideStyle || {}}
                     handleStyle={this.props.handleStyle || {}}
+                    value={this.state.horizontalScroll}
+                    onValueChange={this.onHorizontalScroll}
                 /> 
                 : null
             }

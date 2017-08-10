@@ -10,35 +10,28 @@ class ScrollBar extends React.Component {
         this.onDrag = this.onDrag.bind(this);
         this.onDragEnd = this.onDragEnd.bind(this);
         this.onMouseWheel = this.onMouseWheel.bind(this);
-        this.set = this.set.bind(this);
-        this.limit = this.limit.bind(this);
         this.onGuideClick = this.onGuideClick.bind(this);
+        this.delegate = this.delegate.bind(this);
         
         this.state = {
             dragging: false,
             initialMouseOffset: 0,
             offset: 0,
-            size: this.getSize(props.size)
         };
     }
-    getSize(size) {
-        return Math.max(size, 5); // the scrollbar should not be smaller than 5% of the container
-    }
-    limit(offset) {
-        const max = (this.props.horizontal ? this.guide.offsetWidth : this.guide.offsetHeight) * (1 - this.getSize(this.props.size) / 100);
-        return [Math.min(Math.max(offset, 0), max), max]
-    }
-    set(offset, max) {
-        this.setState({offset});
-        this.props.onScroll(offset / max);
+    delegate(value, relative) {
+        const max = relative ? 1 : (this.props.horizontal ? this.guide.offsetWidth : this.guide.offsetHeight) - this.props.handleSize;
+        const limitedValue = Math.max(0, Math.min(value, max)) / max;
+        this.props.onValueChange(limitedValue);
     }
     onMouseWheel(e) {
         if(!this.guide) {
+            this.delegate(0, true);
             this.props.container.removeEventListener('mousewheel', this.onMouseWheel);
         }
         else if((this.props.horizontal && e.shiftKey) || (!this.props.horizontal && !e.shiftKey)) {
-            const newOffset =  this.state.offset + this.props.sensitivity * e.deltaY * this.getSize(this.props.size) / 100;
-            this.set(...this.limit(newOffset));
+            const value =  this.props.value + this.props.sensitivity * e.deltaY;
+            this.delegate(value, true);
         }
     }
     getMouseOffset(e) {
@@ -50,8 +43,8 @@ class ScrollBar extends React.Component {
     }
     onDrag(e) {
         if(this.state.dragging) {
-            const newOffset = (this.props.horizontal ? e.clientX : e.clientY) - this.state.initialMouseOffset;
-            this.set(...this.limit(newOffset));
+            const value = (this.props.horizontal ? e.clientX : e.clientY) - this.state.initialMouseOffset;
+            this.delegate(value);
         }
     }
     onDragEnd(e) {
@@ -61,14 +54,23 @@ class ScrollBar extends React.Component {
         }
     }
     onGuideClick(e) {
-        const newOffset = this.getMouseOffset(e) - this.getSize(this.props.size) / 2;
-        this.set(...this.limit(newOffset));
+        const value = this.getMouseOffset(e) - this.props.handleSize / 2;
+        this.delegate(value);
     }
     preventClickPropagation(e) {
         e.stopPropagation();
     }
-    componentDidReceiveProps(newProps) {
-        this.setState({size: this.getSize(newProps.size)});
+    getTop() {
+        if(this.guide && !this.props.horizontal) {
+            return this.props.value * (this.guide.offsetHeight - this.props.handleSize);
+        }
+        return 0;
+    }
+    getLeft() {
+        if(this.guide && this.props.horizontal) {
+            return this.props.value * (this.guide.offsetWidth - this.props.handleSize);
+        }
+        return 0;
     }
     componentDidMount() {
         document.addEventListener('mousemove', this.onDrag);
@@ -85,8 +87,8 @@ class ScrollBar extends React.Component {
             <div 
                 className={style('bs-guide', this.props.guideStyle)} 
                 style={{
-                    height: this.props.horizontal ? this.props.thickness : `calc(100% - ${this.props.offset}px)`,
-                    width: this.props.horizontal ? `calc(100% - ${this.props.offset}px)` : this.props.thickness,
+                    height: this.props.horizontal ? this.props.guideHeight : `calc(100% - ${this.props.offset}px)`,
+                    width: this.props.horizontal ? `calc(100% - ${this.props.offset}px)` : this.props.guideWidth,
                     position: 'relative',
                     top: (!this.props.horizontal && this.props.offset) ? this.props.offset : 0,
                     left: (this.props.horizontal && this.props.offset) ? this.props.offset : 0
@@ -97,11 +99,11 @@ class ScrollBar extends React.Component {
                 <div 
                     className={style('bs-handle', this.props.handleStyle)}
                     style={{
-                        width: this.props.horizontal ? `${this.getSize(this.props.size)}%` : '100%',
-                        height: this.props.horizontal ? '100%' : `${this.getSize(this.props.size)}%`,
+                        width: this.props.horizontal ? this.props.handleSize : '100%',
+                        height: this.props.horizontal ? '100%' : this.props.handleSize,
                         position: 'absolute',
-                        top: this.props.horizontal ? 0 : `${this.state.offset}px`,
-                        left: this.props.horizontal ? `${this.state.offset}px` : 0
+                        top: this.getTop(),
+                        left: this.getLeft()
                     }}
                     onMouseDown={this.onDragStart}
                     ref={elt => this.scrollbar = elt}

@@ -62,7 +62,7 @@ const styles = {
   'bt-column-body': {
     width: '100%',
     height: '100%',
-    position: 'absolute'
+    position: 'relative'
   },
   'bt-scroll-guide': {
     boxSizing: 'border-box', 

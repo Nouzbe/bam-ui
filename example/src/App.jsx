@@ -19,7 +19,7 @@ history.listen((location, action) => {
 class App extends React.Component {
   makeData() {
     let fatData = [];
-    for(let i = 0; i < 100; i++) {
+    for(let i = 0; i < 1; i++) {
       fatData = fatData.concat(data);
     }
     return fatData;

@@ -1,6 +1,6 @@
 {
   "name": "bam-table",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "pure presentational table React Component",
   "files": [
     "lib"
