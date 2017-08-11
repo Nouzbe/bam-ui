@@ -3,9 +3,7 @@ import Table from './Table.js';
 
 class ExportedTable extends React.Component {
   isValid() {
-    return this.props.headers !== undefined
-    && this.props.headers.length > 0
-    && this.props.data !== undefined
+    return this.props.data !== undefined
     && this.props.data.length > 0;
   }
   render() {

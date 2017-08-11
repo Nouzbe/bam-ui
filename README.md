@@ -43,4 +43,4 @@ $ yarn
 $ yarn setup
 $ yarn start
 ```
-From the root of the project. This will install bam-ui itself, then install every component and finally start them as well as the showcase in development mode. You still have to make sure that you have linked all the components on which you are going to work.
+From the root of the project. This will install bam-ui itself, then install every component and finally start them all as well as the showcase in development mode. You still have to make sure that you have linked all the components on which you are going to work.

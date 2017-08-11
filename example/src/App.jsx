@@ -7,8 +7,7 @@ import Table from 'bam-table';
 import store from './store.js';
 import actions from './actions.js';
 
-import headers from './data/headers';
-import data from './data/data.js';
+import {data, header} from './data/data.js';
 
 const history = createHistory();
 history.listen((location, action) => {
@@ -16,17 +15,20 @@ history.listen((location, action) => {
   store.dispatch(actions.goto(route));
 });
 
+const factor = 1000;
+
 class App extends React.Component {
-  makeData() {
+  multiply(arr) {
     let fatData = [];
-    for(let i = 0; i < 1; i++) {
-      fatData = fatData.concat(data);
+    for(let i = 0; i < factor; i++) {
+      const offset = i * arr.length;
+      fatData = fatData.concat(arr.map((r, idx) => [{caption: idx + offset, value: idx + offset}].concat(r)));
     }
     return fatData;
   }
   render() {
     return (
-      <Table headers={headers} data={this.makeData()}/>
+      <Table data={[header].concat(this.multiply(data))} frozenRows={5} frozenColumns={4}/>
     );
   }
 }
