@@ -1,5 +1,6 @@
 import React from 'react';
 import style from './style.js';
+import FloatingBorder from './FloatingBorder.js';
 
 class Header extends React.Component {
     constructor(props) {
@@ -27,10 +28,10 @@ class Header extends React.Component {
     }
     onResize(e) {
         if(this.state.resizingWidth) {
-            this.props.onWidthChange(this.state.initialWidth + e.clientX - this.state.initialClientX);
+            this.props.onWidthChange(Math.max(1, this.state.initialWidth + e.clientX - this.state.initialClientX));
         }
         if(this.state.resizingHeight) {
-            this.props.onHeightChange(this.state.initialHeight + e.clientY - this.state.initialClientY);
+            this.props.onHeightChange(Math.max(1, this.state.initialHeight + e.clientY - this.state.initialClientY));
         }
     }
     onResizeEnd() {
@@ -46,45 +47,33 @@ class Header extends React.Component {
         document.removeEventListener('mousemove', this.onResize);
         document.removeEventListener('mouseup', this.onResizeEnd);
     }
+    renderBorderBottom() {
+        return <div 
+            className={style("bt-header-bottom-border")}
+            onMouseDown={this.onResizeHeightStart}
+            onMouseEnter={this.props.onMouseEnterBorderBottom}
+            onMouseLeave={this.props.onMouseLeaveBorderBottom}
+        />
+    }
+    renderBorderRight() {
+        return <div 
+            className={style("bt-header-right-border")} 
+            onMouseDown={this.onResizeWidthStart}
+            onMouseEnter={this.props.onMouseEnterBorderRight}
+            onMouseLeave={this.props.onMouseLeaveBorderRight}
+            style={{zIndex: (this.props.onWidthChange && this.props.onHeightChange) ? 6 : 4}}    
+        />
+    }
     render() {
+        const containerStyle={height: this.props.height, zIndex: (this.props.onWidthChange && this.props.onHeightChange) ? 5 : 3};
         return (
-            <div 
-                ref={e => this.container = e}
-                className={style('bt-header-container')}
-                style={{
-                    height: `${this.props.height}px`,
-                    zIndex: (this.props.onWidthChange && this.props.onHeightChange) ? 5 : 3    
-                }}
-            >
-                <div className={style("bt-header")} style={{borderRight: this.props.onWidthChange ? 'auto' : '1px solid #b3b3b3'}}>
+            <div ref={e => this.container = e} className={style('bt-header-container')} style={containerStyle}>
+                <div className={style("bt-header")}>
                     {this.props.cell.caption}
                 </div>
-                {this.props.onHeightChange ? 
-                    <div 
-                        className={style("bt-header-bottom-border")}
-                        onMouseDown={this.onResizeHeightStart}
-                        onMouseEnter={this.props.onMouseEnterBorderBottom}
-                        onMouseLeave={this.props.onMouseLeaveBorderBottom}
-                    />
-                :
-                    null
-                }
-                {this.props.onWidthChange ? 
-                    <div 
-                        className={style("bt-header-right-border")} 
-                        onMouseDown={this.onResizeWidthStart}
-                        onMouseEnter={this.props.onMouseEnterBorderRight}
-                        onMouseLeave={this.props.onMouseLeaveBorderRight}
-                        style={{zIndex: (this.props.onWidthChange && this.props.onHeightChange) ? 6 : 4}}    
-                    /> 
-                : 
-                    null
-                }
-                {this.props.highlightedBorderBottom ?
-                    <div className={style('bt-cell-border-bottom')} style={{background: this.props.highlightColor}}/>
-                :
-                    null
-                }
+                {this.props.onHeightChange ? this.renderBorderBottom() : null}
+                {this.props.onWidthChange ? this.renderBorderRight() : null}
+                <FloatingBorder horizontal visible={this.props.highlightedBorderBottom} color={this.props.highlightColor}/>
             </div>
         );
     }

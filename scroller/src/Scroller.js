@@ -111,7 +111,6 @@ class Scroller extends React.Component {
         ResizeSensor(this.content.firstChild, this.onResize);
     }
     render() {
-        console.log(this.props.verticalOffset)
         const thickness = this.getThickness();
         const isVerticalScrollbarVisible = this.state.verticalHandleHeight < 100;
         const isHorizontalScrollbarVisible = this.state.horizontalHandleWidth < 100;

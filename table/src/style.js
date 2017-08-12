@@ -51,15 +51,6 @@ const styles = {
     whiteSpace: 'nowrap',
     padding: '3px'
   },
-  'bt-cell-border-bottom': {
-    position: 'absolute',
-    left: 0,
-    bottom: 2,
-    height: 1,
-    width: '100%',
-    zIndex: 7,
-    pointerEvents: 'none'
-  },
   'bt-column': {
     float: 'left',
     height: '100%',
@@ -70,27 +61,11 @@ const styles = {
     height: '100%',
     position: 'relative'
   },
-  'bt-column-border-right': {
+  'bt-floating-border': {
     position: 'absolute',
-    right: 2,
-    top: 0,
-    height: '100%',
-    width: 1,
     zIndex: 7,
     pointerEvents: 'none'
   },
-  'bt-scroll-guide': {
-    boxSizing: 'border-box', 
-    borderRight: '1px solid #b3b3b3',
-    width: '15px'
-  },
-  'bt-scroll-handle': {
-    backgroundColor: '#c3c3c3',
-    transition: 'top 50ms, left 50ms',
-    ':hover': {
-      backgroundColor: '#d3d3d3',
-    }
-  }
 };
 
 export default (className, style) => `${className} ${css(Object.assign(styles[className], style || {}))}`;

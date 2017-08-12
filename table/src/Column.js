@@ -1,6 +1,7 @@
 import React from 'react';
 import Cell from './Cell.js';
 import Header from './Header.js';
+import FloatingBorder from './FloatingBorder.js';
 import style from './style.js';
 
 class Column extends React.Component {
@@ -52,59 +53,49 @@ class Column extends React.Component {
     onResizeHeightEnd(idx) {
         this.props.onResizeRowHeightEnd(idx);
     }
+    renderHeader(row, rowIdx, rowIdxOffset, isHorizontallyResizable, isVerticallyResizable) {
+        return <Header 
+            key={`header-${this.props.colIdx}-${rowIdx + rowIdxOffset}`} 
+            cell={row[this.props.colIdx]} 
+            height={this.props.rowHeights[rowIdx + rowIdxOffset]}
+            onWidthChange={isHorizontallyResizable ? this.onWidthChange : undefined}
+            onMouseEnterBorderRight={isHorizontallyResizable ? this.onMouseEnterBorderRight : undefined}
+            onMouseLeaveBorderRight={isHorizontallyResizable ? this.onMouseLeaveBorderRight : undefined}
+            onResizeWidthStart={isHorizontallyResizable ? this.onResizeWidthStart : undefined}
+            onResizeWidthEnd={isHorizontallyResizable ? this.onResizeWidthEnd : undefined}
+            onHeightChange={isVerticallyResizable ? newHeight => this.onRowHeightChange(rowIdx + rowIdxOffset, newHeight) : undefined}
+            onMouseEnterBorderBottom={isVerticallyResizable ? () => this.onMouseEnterBorderBottom(rowIdx + rowIdxOffset) : undefined}
+            onMouseLeaveBorderBottom={isVerticallyResizable ? () => this.onMouseLeaveBorderBottom(rowIdx + rowIdxOffset) : undefined}
+            onResizeHeightStart={isVerticallyResizable ? () => this.onResizeHeightStart(rowIdx + rowIdxOffset) : undefined}
+            onResizeHeightEnd={isVerticallyResizable ? () => this.onResizeHeightEnd(rowIdx + rowIdxOffset) : undefined}
+            resizingWidth={this.state.resizingWidth}
+            highlightedBorderBottom={this.props.highlightedBorderBottomIdx === rowIdx + rowIdxOffset || this.props.rowIdxBeingResized === rowIdx + rowIdxOffset}
+            highlightColor={this.props.highlightColor}
+        />
+    }
+    renderCell(row, rowIdx, rowIdxOffset) {
+        return <Cell 
+            key={`cell-${this.props.colIdx}-${rowIdx}`} 
+            cell={row[this.props.colIdx]} 
+            height={this.props.rowHeights[rowIdx + rowIdxOffset]}
+            highlightedBorderBottom={this.props.highlightedBorderBottomIdx === rowIdx + rowIdxOffset || this.props.rowIdxBeingResized === rowIdx + rowIdxOffset}
+            highlightColor={this.props.highlightColor}
+        />
+    }
     render() {
         return (
             <div className={style('bt-column')} style={{width: this.props.columnWidth}}>
-                {this.props.data.slice(0, this.props.frozenCells).map((c, idx) => (
-                    <Header 
-                        key={`header-${this.props.colIdx}-${idx}`} 
-                        cell={c} 
-                        height={this.props.rowHeights[idx]}
-                        onWidthChange={this.onWidthChange}
-                        onMouseEnterBorderRight={this.onMouseEnterBorderRight}
-                        onMouseLeaveBorderRight={this.onMouseLeaveBorderRight}
-                        onResizeWidthStart={this.onResizeWidthStart}
-                        onResizeWidthEnd={this.onResizeWidthEnd}
-                        onHeightChange={this.props.frozen ? newHeight => this.onRowHeightChange(idx, newHeight) : undefined}
-                        onMouseEnterBorderBottom={this.props.frozen ? () => this.onMouseEnterBorderBottom(idx) : undefined}
-                        onMouseLeaveBorderBottom={this.props.frozen ? () => this.onMouseLeaveBorderBottom(idx) : undefined}
-                        onResizeHeightStart={this.props.frozen ? () => this.onResizeHeightStart(idx) : undefined}
-                        onResizeHeightEnd={this.props.frozen ? () => this.onResizeHeightEnd(idx) : undefined}
-                        resizingWidth={this.state.resizingWidth}
-                        highlightedBorderBottom={this.props.highlightedBorderBottomIdx === idx || this.props.rowIdxBeingResized === idx}
-                        highlightColor={this.props.highlightColor}
-                    />
-                ))}
+                {this.props.data.slice(0, this.props.frozenCellsCount).map((row, rowIdx) => this.renderHeader(row, rowIdx, 0, true, this.props.frozen))}
                 <div className={style('bt-column-body')} style={{top: this.props.offsetTop}}>
-                    {this.props.data.slice(this.props.frozenCells).map((c, idx) => (
-                        this.props.frozen ? 
-                            <Header 
-                                key={`cell-${this.props.colIdx}-${idx}`} 
-                                cell={c} 
-                                height={this.props.rowHeights[this.props.frozenCells + idx]}
-                                onHeightChange={this.props.frozen ? newHeight => this.onRowHeightChange(this.props.frozenCells + idx, newHeight) : undefined}
-                                onMouseEnterBorderBottom={this.props.frozen ? () => this.onMouseEnterBorderBottom(this.props.frozenCells + idx) : undefined}
-                                onMouseLeaveBorderBottom={this.props.frozen ? () => this.onMouseLeaveBorderBottom(this.props.frozenCells + idx) : undefined}
-                                onResizeHeightStart={this.props.frozen ? () => this.onResizeHeightStart(this.props.frozenCells + idx) : undefined}
-                                onResizeHeightEnd={this.props.frozen ? () => this.onResizeHeightEnd(this.props.frozenCells + idx) : undefined}
-                                highlightedBorderBottom={this.props.highlightedBorderBottomIdx === this.props.frozenCells + idx || this.props.rowIdxBeingResized === this.props.frozenCells + idx}
-                                highlightColor={this.props.highlightColor}
-                            />
-                        :    
-                            <Cell 
-                                key={`cell-${this.props.colIdx}-${idx}`} 
-                                cell={c} 
-                                height={this.props.rowHeights[this.props.frozenCells + idx]}
-                                highlightedBorderBottom={this.props.highlightedBorderBottomIdx === this.props.frozenCells + idx || this.props.rowIdxBeingResized === this.props.frozenCells + idx}
-                                highlightColor={this.props.highlightColor}
-                            />
+                    {this.props.data.slice(this.props.frozenCellsCount).map((row, rowIdx) => (
+                        this.props.frozen ?
+                            this.renderHeader(row, rowIdx, this.props.frozenCellsCount, false, this.props.frozen)
+                        : 
+                            this.renderCell(row, rowIdx, this.props.frozenCellsCount)
+                            
                     ))}
                 </div>
-                {this.state.mouseOnBorderRight || this.state.resizingWidth ?
-                    <div className={style('bt-column-border-right')} style={{background: this.props.highlightColor}}/>
-                :
-                    null
-                }
+                <FloatingBorder visible={this.state.mouseOnBorderRight || this.state.resizingWidth} color={this.props.highlightColor}/>
             </div>
         );
     }
