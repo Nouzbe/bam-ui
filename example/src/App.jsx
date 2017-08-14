@@ -28,7 +28,7 @@ class App extends React.Component {
   }
   render() {
     return (
-      <Table data={[header].concat(this.multiply(data))} frozenRowsCount={5} frozenColumnsCount={4}/>
+      <Table data={[header].concat(this.multiply(data))} frozenRowsCount={2} frozenColumnsCount={2}/>
     );1
   }
 }

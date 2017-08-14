@@ -7,7 +7,7 @@ class Cell extends React.Component {
         return (
             <div ref={e => this.container = e} style={{width: '100%', height: `${this.props.height}px`, position: 'relative'}}>
                 <div className={style("bt-cell")}>{this.props.cell.caption}</div>
-                <FloatingBorder horizontal visible={this.props.highlightedBorderBottom} color={this.props.highlightColor}/>
+                <FloatingBorder horizontal visible={this.props.highlightedBorderBottom} color={this.props.resizeHintColor}/>
             </div>
         );
     }

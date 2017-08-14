@@ -62,10 +62,17 @@ const styles = {
     position: 'relative'
   },
   'bt-floating-border': {
-    position: 'absolute',
     zIndex: 7,
     pointerEvents: 'none'
   },
+  'bt-translucent-layer': {
+    height: '100%',
+    opacity: 0.1,
+    pointerEvents: 'none',
+    position: 'absolute',
+    top: 0,
+    zIndex: 5
+  }
 };
 
 export default (className, style) => `${className} ${css(Object.assign(styles[className], style || {}))}`;
