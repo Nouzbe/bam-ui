@@ -105,7 +105,7 @@ class ScrollBar extends React.Component {
                         top: this.getTop(),
                         left: this.getLeft()
                     }}
-                    onMouseDown={this.onDragStart}
+                    onMouseDown={e => e.button === 0 ? this.onDragStart(e) : null}
                     ref={elt => this.scrollbar = elt}
                     onClick={this.preventClickPropagation} // prevent parent from scrolling to click offset
                 />

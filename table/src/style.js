@@ -5,7 +5,8 @@ const styles = {
     userSelect: 'none',
     height: '100%',
     width: '100%',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    cursor: 'default'
   },
   'bt-header-container': {
     width: '100%',
@@ -22,7 +23,7 @@ const styles = {
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     padding: '3px',
-    background: '#f2f2f2',
+    background: '#e6e6e6',
   },
   'bt-header-right-border': {
     float: 'right', 
@@ -42,14 +43,17 @@ const styles = {
     zIndex: 2,
     cursor: 'ns-resize'
   },
+  'bt-cell-container': {
+    position: 'relative'
+  },
   'bt-cell': {
     height: '100%',
     boxSizing: 'border-box',
-    borderRight: '1px solid #d3d3d3',
-    borderBottom: '1px solid #d3d3d3',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
-    padding: '3px'
+    padding: '3px',
+    borderRight: '1px solid #d3d3d3',
+    borderBottom: '1px solid #d3d3d3',
   },
   'bt-column': {
     float: 'left',
@@ -62,16 +66,17 @@ const styles = {
     position: 'relative'
   },
   'bt-floating-border': {
-    zIndex: 7,
-    pointerEvents: 'none'
+    pointerEvents: 'none',
+    position: 'absolute'
   },
   'bt-translucent-layer': {
     height: '100%',
-    opacity: 0.1,
+    width: '100%',
     pointerEvents: 'none',
     position: 'absolute',
     top: 0,
-    zIndex: 5
+    zIndex: 5,
+    boxSizing: 'border-box'
   }
 };
 

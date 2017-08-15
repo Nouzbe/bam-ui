@@ -7,12 +7,14 @@ export default props => (
             className={style('bt-floating-border')}
             style={{
                 background: props.color,
-                height: props.horizontal ? 1 : '100%',
-                width: props.horizontal ? '100%' : (props.left !== undefined ? 2 : 1),
-                bottom: props.horizontal ? 2 : 0,
-                right: props.horizontal ? 0 : 2,
-                left: props.left !== undefined ? props.left : 'auto',
-                position: props.left !== undefined ? 'fixed' : 'absolute'
+                height: (props.top || props.bottom) ? props.height || 1 : '100%',
+                width: (props.top || props.bottom) ? '100%' : props.width || 1,
+                bottom: (props.top || props.bottom) ? props.offset || 0 :'none',
+                right: props.right ? props.offset || 0 : 'none',
+                left: props.left ? props.offset || 0 : (props.top || props.bottom) ? 0 : 'none',
+                top: props.top ? props.offset || 0 : (props.left || props.right) ? 0 : 'none',
+                bottom: props.bottom ? props.offset || 0 : 'none',
+                zIndex: props.zIndex || 7
             }}
         />
     :

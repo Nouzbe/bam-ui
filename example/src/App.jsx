@@ -15,7 +15,7 @@ history.listen((location, action) => {
   store.dispatch(actions.goto(route));
 });
 
-const factor = 1000;
+const factor = 100;
 
 class App extends React.Component {
   multiply(arr) {
@@ -28,7 +28,7 @@ class App extends React.Component {
   }
   render() {
     return (
-      <Table data={[header].concat(this.multiply(data))} frozenRowsCount={2} frozenColumnsCount={2}/>
+      <Table data={[header].concat(this.multiply(data))} frozenRowsCount={3} frozenColumnsCount={2}/>
     );1
   }
 }
