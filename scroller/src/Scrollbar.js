@@ -6,18 +6,18 @@ import style from './style.js';
 class ScrollBar extends React.Component {
     constructor(props) {
         super(props);
-        this.onDragStart = this.onDragStart.bind(this);
-        this.onDrag = this.onDrag.bind(this);
-        this.onDragEnd = this.onDragEnd.bind(this);
-        this.onMouseWheel = this.onMouseWheel.bind(this);
-        this.onGuideClick = this.onGuideClick.bind(this);
-        this.delegate = this.delegate.bind(this);
-        
         this.state = {
             dragging: false,
             initialMouseOffset: 0,
             offset: 0,
+            hovering: false
         };
+        this.onDragStart = this.onDragStart.bind(this);
+        this.onDrag = _.throttle(this.onDrag, 30).bind(this);
+        this.onDragEnd = this.onDragEnd.bind(this);
+        this.onMouseWheel = this.onMouseWheel.bind(this);
+        this.onGuideClick = this.onGuideClick.bind(this);
+        this.delegate = this.delegate.bind(this);
     }
     delegate(value, relative) {
         const max = relative ? 1 : (this.props.horizontal ? this.guide.offsetWidth : this.guide.offsetHeight) - this.props.handleSize;
@@ -68,8 +68,16 @@ class ScrollBar extends React.Component {
     }
     getLeft() {
         if(this.guide && this.props.horizontal) {
-            return this.props.value * (this.guide.offsetWidth - this.props.handleSize);
+            return this.props.value * (this.guide.offsetWidth - this.props.handleSize - this.props.guideHeight);
         }
+        return 0;
+    }
+    getOpacity() {
+        if(!this.props.visible) return 0;
+        if(!this.props.floating) return 1;
+        if(this.state.dragging) return 0.9;
+        if(this.props.hoveringScrollbar) return 0.7;
+        if(this.props.hoveringContent) return 0.6;
         return 0;
     }
     componentDidMount() {
@@ -85,23 +93,26 @@ class ScrollBar extends React.Component {
     render() {
         return (
             <div 
-                className={style('bs-guide', this.props.guideStyle)} 
+                className={style(`bs-guide${this.props.floating ? '-floating' : ''}`, this.props.guideStyle)} 
                 style={{
                     height: this.props.horizontal ? this.props.guideHeight : `calc(100% - ${this.props.offset}px)`,
                     width: this.props.horizontal ? `calc(100% - ${this.props.offset}px)` : this.props.guideWidth,
-                    position: 'relative',
-                    top: (!this.props.horizontal && this.props.offset) ? this.props.offset : 0,
-                    left: (this.props.horizontal && this.props.offset) ? this.props.offset : 0
+                    top: (!this.props.horizontal && this.props.offset) ? this.props.offset : 'initial',
+                    left: (this.props.horizontal && this.props.offset) ? this.props.offset : 'initial',
+                    bottom: this.props.horizontal ? 0 : 'initial',
+                    right: this.props.horizontal ? 'initial' : 0,
+                    opacity: this.getOpacity()
                 }}
                 ref={elt => this.guide = elt}
                 onClick={this.onGuideClick} // scroll to click offset
+                onMouseEnter={this.props.onMouseEnter}
+                onMouseLeave={this.props.onMouseLeave}
             >
                 <div 
                     className={style('bs-handle', this.props.handleStyle)}
                     style={{
                         width: this.props.horizontal ? this.props.handleSize : '100%',
                         height: this.props.horizontal ? '100%' : this.props.handleSize,
-                        position: 'absolute',
                         top: this.getTop(),
                         left: this.getLeft()
                     }}

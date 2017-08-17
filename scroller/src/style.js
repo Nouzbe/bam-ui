@@ -4,14 +4,35 @@ const styles = {
   'bs-guide': {
     boxSizing: 'border-box', 
     borderRight: '1px solid #b3b3b3',
-    width: '15px'
+    width: '15px',
+    position: 'absolute',
+  },
+  'bs-guide-floating': {
+    boxSizing: 'border-box', 
+    borderRight: '1px solid #b3b3b3',
+    width: '15px',
+    position: 'absolute',
+    opacity: 0,
+    transition: 'opacity 100ms',
+    ':hover': {
+      opacity: 0.7
+    }
   },
   'bs-handle': {
-    backgroundColor: '#c3c3c3',
-    transition: 'top 50ms, left 50ms',
-    ':hover': {
-      backgroundColor: '#d3d3d3',
-    }
+    backgroundColor: '#999999',
+    position: 'absolute'
+  },
+  'bs-container': {
+    position: 'initial',
+    overflow: 'hidden',
+    float: 'left',
+    height: '100%'
+  },
+  'bs-content': {
+    position: 'relative', 
+    height: '100%',
+    float: 'left',
+    transition: 'top 30ms, left 30ms'
   }
 };
 

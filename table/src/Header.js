@@ -6,17 +6,17 @@ class Header extends React.Component {
     renderBorderBottom() {
         return <div 
             className={style("bt-header-bottom-border")}
-            onMouseDown={e => e.button === 0 ? this.props.onResizeHeightStart(this.container.offsetHeight - e.clientY) : null}
-            onMouseEnter={this.props.onMouseEnterBorderBottom}
-            onMouseLeave={this.props.onMouseLeaveBorderBottom}
+            onMouseDown={e => e.button === 0 ? this.props.onResizeHeightStart(this.props.rowIdx, this.container.offsetHeight - e.clientY) : null}
+            onMouseEnter={() => this.props.onMouseEnterBorderBottom(this.props.rowIdx)}
+            onMouseLeave={() => this.props.onMouseLeaveBorderBottom(this.props.rowIdx)}
         />
     }
     renderBorderRight() {
         return <div 
             className={style("bt-header-right-border")} 
             onMouseDown={e => e.button === 0 ? this.props.onResizeWidthStart(this.container.offsetWidth - e.clientX) : null}
-            onMouseEnter={this.props.onMouseEnterBorderRight}
-            onMouseLeave={this.props.onMouseLeaveBorderRight}
+            onMouseEnter={() => this.props.onMouseEnterBorderRight(this.props.rowIdx)}
+            onMouseLeave={() => this.props.onMouseLeaveBorderRight(this.props.rowIdx)}
             style={{zIndex: (this.props.onWidthResizeStart && this.props.onResizeHeightStart) ? 6 : 4}}    
         />
     }
@@ -31,7 +31,7 @@ class Header extends React.Component {
                 ref={e => {
                     this.container = e;
                     if(this.props.rowRef !== undefined) {
-                        this.props.rowRef(e);
+                        this.props.rowRef(this.props.rowIdx, e);
                     }
                 }} 
                 className={style(`bt-header-container`)} 
