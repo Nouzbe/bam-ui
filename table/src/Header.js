@@ -24,7 +24,8 @@ class Header extends React.Component {
         const containerStyle={
             height: this.props.height, 
             zIndex: (this.props.onResizeWidthStart && this.props.onResizeHeightStart) ? 5 : 3,
-            cursor: this.props.onMoveStart ? navigator.userAgent.indexOf('Chrome') !== -1 ? '-webkit-grab' : 'grab' : 'auto'
+            cursor: this.props.onMoveStart ? navigator.userAgent.indexOf('Chrome') !== -1 ? '-webkit-grab' : 'grab' : 'auto',
+            background: this.props.isSelected ? '#d3d3d3': '#e6e6e6'
         };
         return (
             <div 

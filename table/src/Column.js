@@ -16,6 +16,7 @@ class Column extends React.Component {
         this.onMouseLeaveBorderRight = this.onMouseLeaveBorderRight.bind(this);
         this.onMoveStart = this.onMoveStart.bind(this);
         this.onSelectCellsStart = this.onSelectCellsStart.bind(this);
+        this.onEdit = this.onEdit.bind(this);
         this.rowRef = this.rowRef.bind(this);
     }
     onResizeWidthStart(initialOffset) {
@@ -42,15 +43,25 @@ class Column extends React.Component {
     onSelectCellsStart(rowIdx) {
         this.props.onSelectCellsStart(rowIdx, this.props.colIdx);
     }
+    onEdit(rowIdx) {
+        this.props.onEdit(rowIdx, this.props.colIdx);
+    }
     rowRef(rowIdx, elt) {
         this.props.rowRef(this.props.colIdx, rowIdx, elt);
     }
     renderHeader(row, rowIdx, isHorizontallyResizable, isVerticallyResizable, isMovable) {
+        let isSelected = false;
+        let dataRowIdx;
+        if(this.props.cellsSelection !== undefined) {
+            dataRowIdx = this.props.getDataRowIdx(rowIdx);
+            isSelected = this.props.cellsSelection.colIdx.min <= this.props.displayColIdx && this.props.displayColIdx <= this.props.cellsSelection.colIdx.max ||
+                            this.props.cellsSelection.rowIdx.min <= dataRowIdx && dataRowIdx <= this.props.cellsSelection.rowIdx.max;
+        }
         return <Header 
             key={`header-${this.props.colIdx}-${rowIdx}`} 
             rowRef={this.rowRef}
             cell={row[this.props.colIdx]} 
-            height={this.props.rowHeights[this.props.getDataRowIdx(rowIdx)] || this.props.defaultRowHeight}
+            height={this.props.rowHeights[dataRowIdx] || this.props.defaultRowHeight}
             onResizeWidthStart={isHorizontallyResizable ? this.onResizeWidthStart : undefined}
             onMouseEnterBorderBottom={isVerticallyResizable ? this.onMouseEnterBorderBottom : undefined}
             onMouseLeaveBorderBottom={isVerticallyResizable ? this.onMouseLeaveBorderBottom : undefined}
@@ -59,6 +70,7 @@ class Column extends React.Component {
             onResizeHeightStart={isVerticallyResizable ? this.onResizeRowHeightStart : undefined}
             onMoveStart={isMovable ? this.onMoveStart : undefined}
             rowIdx={rowIdx}
+            isSelected={isSelected}
         />
     }
     renderCell(row, rowIdx) {
@@ -83,6 +95,10 @@ class Column extends React.Component {
             selectHintColor={this.props.selectHintColor}
             selectHintBorderColor={this.props.selectHintBorderColor}
             rowIdx={rowIdx}
+            onEdit={this.onEdit}
+            isEdited={this.props.editedRowIdx === rowIdx}
+            userInput={this.props.editedRowIdx === rowIdx ? this.props.userInput : undefined}
+            onChange={this.props.onChange}
         />
     }
     shouldComponentUpdate(nextProps, nextState) {

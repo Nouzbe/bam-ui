@@ -16,9 +16,21 @@ history.listen((location, action) => {
   store.dispatch(actions.goto(route));
 });
 
-const factor = 1000;
+const factor = 10;
 
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: [header].concat(this.multiply(data))
+    }
+    this.onChange = this.onChange.bind(this);
+  }
+  onChange(newCells) {
+    const newData = this.state.data.slice(0);
+    newCells.map(o => newData[o.rowIdx][o.colIdx] = {caption: o.value, value: o.value});
+    this.setState({data: newData});
+  }
   multiply(arr) {
     let arrays = Array.apply(null, new Array(factor));
     arrays = arrays.map((a, i) => arr.map((r, j) => [{caption: i * arr.length + j}].concat(r)));
@@ -26,7 +38,7 @@ class App extends React.Component {
   }
   render() {
     return (
-      <Table data={[header].concat(this.multiply(data))} frozenRowsCount={3} frozenColumnsCount={2}/>
+      <Table data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
     );
   }
 }

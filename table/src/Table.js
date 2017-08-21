@@ -1,7 +1,7 @@
 import React from 'react';
 import Scroller from 'bam-scroller';
 import FloatingBorder from './FloatingBorder.js';
-import clipboard from './clipboard.js';
+import {clipboard, keyboard} from 'bam-utils';
 
 import Column from './Column.js';
 import style from './style.js';
@@ -23,9 +23,9 @@ class Table extends React.Component {
     this.rows = {}; // (rowIdx => first cell elt) for the rows
     this.state = {
       topIdx: 0, // idx of the first displayed row
-      frozenHeaders: liveRows[0].slice(0, props.frozenColumnsCount),
-      liveHeaders: liveRows[0].slice(props.frozenColumnsCount),
       frozenRows: props.data.slice(0, props.frozenRowsCount), // frozen rows data
+      liveHeaders: liveRows[0].slice(props.frozenColumnsCount), // part of frozenRows that is also within frozen columns
+      frozenHeaders: liveRows[0].slice(0, props.frozenColumnsCount), // part of frozenRows that is within live columns
       liveRows: liveRows, // rest of the data
       data: [], // slice of liveRows that is displayed
       rowHeights: {}, // (idx => height) for every row which height has been changed by user
@@ -43,7 +43,9 @@ class Table extends React.Component {
       targetColIdx: undefined, // target future idx of the column that is being moved by the user 
       colIdxMapping: props.data[0].reduce((acc, c, idx) => Object.assign(acc, {[idx]: idx}), {}), // (data colIdx => display colIdx) since columns can be moved
       isSelecting: false, // is the user in the process of drag and dropping in order to select cells
-      cellsSelection: undefined // min & max rowIdx & colIdx defining current cells selection
+      cellsSelection: undefined, // min & max rowIdx & colIdx defining current cells selection
+      editedCell: undefined, // {colIdx, rowIdx} of the currently edited cell
+      userInput: undefined
     };
     this.onScroll = this.onScroll.bind(this);
     this.getNumberOfRowsThatFit = this.getNumberOfRowsThatFit.bind(this);
@@ -61,6 +63,7 @@ class Table extends React.Component {
     this.onSelectCellsStart = this.onSelectCellsStart.bind(this);
     this.onSelectCells = this.onSelectCells.bind(this);
     this.onSelectCellsEnd = this.onSelectCellsEnd.bind(this);
+    this.isASingleCellSelected = this.isASingleCellSelected.bind(this);
     this.onColumnMoveStart = this.onColumnMoveStart.bind(this);
     this.onColumnMove = this.onColumnMove.bind(this);
     this.onColumnMoveEnd = this.onColumnMoveEnd.bind(this);
@@ -74,7 +77,20 @@ class Table extends React.Component {
     this.getColumns = this.getColumns.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
-    this.onCopySelection = this.onCopySelection.bind(this);
+    this.onKeydown = this.onKeydown.bind(this);
+    this.onKeyup = this.onKeyup.bind(this);
+    this.onEdit = this.onEdit.bind(this);
+    this.enterEdition = this.enterEdition.bind(this);
+    this.moveEditionHorizontally = _.throttle(this.moveEditionHorizontally, 60).bind(this);
+    this.moveEditionVertically = _.throttle(this.moveEditionVertically, 60).bind(this);
+    this.moveSelectionHorizontally = _.throttle(this.moveSelectionHorizontally, 60).bind(this);
+    this.moveSelectionVertically = _.throttle(this.moveSelectionVertically, 60).bind(this);
+    this.cleanEdition = this.cleanEdition.bind(this);
+    this.onChange = this.onChange.bind(this);
+    this.copySelection = this.copySelection.bind(this);
+    this.cutSelection = this.cutSelection.bind(this);
+    this.paste = this.paste.bind(this);
+    this.deleteSelection = this.deleteSelection.bind(this);
     this.columnRef = this.columnRef.bind(this);
     this.rowRef = this.rowRef.bind(this);
   }
@@ -202,6 +218,7 @@ class Table extends React.Component {
   // Selecting
 
   onSelectCellsStart(rowIdx, colIdx) {
+    this.cleanEdition();
     const displayColIdx = this.getDisplayColIdx(colIdx);
     const dataRowIdx = this.getDataRowIdx(rowIdx);
     this.setState({
@@ -253,6 +270,32 @@ class Table extends React.Component {
     }
   }
 
+  moveSelectionHorizontally(toTheRight) {
+    const colIdxDirectlyToTheRight = Math.max(this.props.frozenColumnsCount, Math.min(this.state.cellsSelection.colIdx.min + (toTheRight ? 1 : -1), this.props.data[0].length - 1));
+    this.setState({
+      cellsSelection: {
+        rowIdx: {min: this.state.cellsSelection.rowIdx.min, max: this.state.cellsSelection.rowIdx.min, from: this.state.cellsSelection.rowIdx.min},
+        colIdx: {min: colIdxDirectlyToTheRight, max: colIdxDirectlyToTheRight, from: colIdxDirectlyToTheRight}
+      }
+    });
+  }
+
+  moveSelectionVertically(down) {
+    const rowIdxDirectlyToTheBottom = this.getDisplayRowIdx(Math.max(this.props.frozenRowsCount, Math.min(this.getDataRowIdx(this.state.cellsSelection.rowIdx.min) + (down ? 1 : -1), this.props.data.length - 1)));
+    this.setState({
+      cellsSelection: {
+        rowIdx: {min: rowIdxDirectlyToTheBottom, max: rowIdxDirectlyToTheBottom, from: rowIdxDirectlyToTheBottom},
+        colIdx: {min: this.state.cellsSelection.colIdx.min, max: this.state.cellsSelection.colIdx.min, from: this.state.cellsSelection.colIdx.min}
+      }
+    });
+  }
+
+  isASingleCellSelected() {
+    return this.state.cellsSelection !== undefined &&
+           this.state.cellsSelection.rowIdx.min === this.state.cellsSelection.rowIdx.max && 
+           this.state.cellsSelection.colIdx.min === this.state.cellsSelection.colIdx.max;
+  }
+
   // Moving columns
 
   onColumnMoveStart(colIdx) {
@@ -286,17 +329,131 @@ class Table extends React.Component {
     });
   }
 
-  // Copying content
+  // Editing
 
-  onCopySelection(e) {
-    if(e.keyCode === 67 && e.ctrlKey && this.state.cellsSelection !== undefined) {
-      const selectedRows = this.props.data.slice(this.state.cellsSelection.rowIdx.min, this.state.cellsSelection.rowIdx.max + 1);
-      const selectedColumnIndexes = [];
-      for(let i = this.state.cellsSelection.colIdx.min; i <= this.state.cellsSelection.colIdx.max; i++) {
-        selectedColumnIndexes.push(this.getDataColIdx(i));
-      }
-      clipboard.copy(selectedRows.map(r => selectedColumnIndexes.map(i => r[i].caption).join('\t')).join('\n'));
+  onEdit(rowIdx, colIdx) {
+    const displayColIdx = this.getDisplayColIdx(colIdx);
+    const dataRowIdx = this.getDataRowIdx(rowIdx);
+    this.setState({
+      cellsSelection: {
+        rowIdx: {min: dataRowIdx, max: dataRowIdx, from: dataRowIdx},
+        colIdx: {min: displayColIdx, max: displayColIdx, from: displayColIdx}
+      },
+      editedCell: {rowIdx, colIdx},
+      userInput: this.props.data[dataRowIdx][colIdx].caption
+    });
+    this.initialOffsetTop = this.state.offsetTop;
+  }
+
+  enterEdition(e) {
+    this.gotFirstOnChange = false; // this lets us keep track of all input, even if the next keyup is fired before the input is mounted and focused
+    const colIdx = this.getDataColIdx(this.state.cellsSelection.colIdx.min);
+    this.setState({
+      editedCell: {
+        colIdx, 
+        rowIdx: this.getDisplayRowIdx(this.state.cellsSelection.rowIdx.min)
+      },
+      userInput: this.props.data[this.state.cellsSelection.rowIdx.min][colIdx].caption
+    });
+  
+  }
+  copySelection() {
+    const selectedRows = this.props.data.slice(this.state.cellsSelection.rowIdx.min, this.state.cellsSelection.rowIdx.max + 1);
+    const selectedColumnIndexes = [];
+    for(let i = this.state.cellsSelection.colIdx.min; i <= this.state.cellsSelection.colIdx.max; i++) {
+      selectedColumnIndexes.push(this.getDataColIdx(i));
     }
+    clipboard.copy(selectedRows.map(r => selectedColumnIndexes.map(i => r[i].caption).join('\t')).join('\n'));
+  }
+
+  cutSelection() {
+    this.copySelection();
+    this.deleteSelection();
+  }
+
+  paste(evt) {
+    if(this.props.onChange !== undefined && this.isASingleCellSelected()) {
+      const copiedRows = evt.clipboardData.getData('Text').split('\n');
+      const newCells = [];
+      copiedRows.map((r, i) => {
+        const rowIdx = this.state.cellsSelection.rowIdx.min + i;
+        if(rowIdx < this.props.data.length) {
+          r.split('\t').map((value, j) => {
+            const displayColIdx = this.state.cellsSelection.colIdx.min + j;
+            if(displayColIdx < this.props.data[0].length) {
+              newCells.push({
+                rowIdx,
+                colIdx: this.getDataColIdx(displayColIdx),
+                value
+              });
+            }
+          });
+        }
+      });
+      this.props.onChange(newCells);
+    }
+  }
+
+  deleteSelection() {
+    const newCells = [];
+    for(let i = this.state.cellsSelection.rowIdx.min; i <= this.state.cellsSelection.rowIdx.max; i++) {
+      for(let j = this.state.cellsSelection.colIdx.min; j <= this.state.cellsSelection.colIdx.max; j++) {
+        newCells.push({
+          rowIdx: i,
+          colIdx: this.getDataColIdx(j),
+          value: ''
+        });
+      }
+    }
+    this.props.onChange(newCells);
+  }
+
+  moveEditionHorizontally(toTheRight) {
+    const dataRowIdx = this.getDataRowIdx(this.state.editedCell.rowIdx);
+    this.props.onChange([{rowIdx: dataRowIdx, colIdx: this.state.editedCell.colIdx, value: this.state.userInput}]);
+    const colIdxDirectlyToTheRight = Math.max(0, Math.min(this.getDisplayColIdx(this.state.editedCell.colIdx) + (toTheRight ? 1 : -1), this.props.data[0].length - 1));
+    const dataColIdx = this.getDataColIdx(colIdxDirectlyToTheRight);
+    this.setState({
+      editedCell: {
+        rowIdx: this.state.editedCell.rowIdx,
+        colIdx: dataColIdx
+      },
+      cellsSelection: {
+        rowIdx: {min: dataRowIdx, max: dataRowIdx, from: dataRowIdx},
+        colIdx: {min: colIdxDirectlyToTheRight, max: colIdxDirectlyToTheRight, from: colIdxDirectlyToTheRight}
+      },
+      userInput: this.props.data[dataRowIdx][dataColIdx].caption
+    });
+  }
+
+  moveEditionVertically(down) {
+    this.props.onChange([{rowIdx: this.getDataRowIdx(this.state.editedCell.rowIdx), colIdx: this.state.editedCell.colIdx, value: this.state.userInput}]);
+    const rowIdxDirectlyToTheBottom = Math.max(0, Math.min(this.getDataRowIdx(this.state.editedCell.rowIdx) + (down ? 1 : -1), this.props.data.length - 1));
+    this.setState({
+      editedCell: {
+        rowIdx: this.getDisplayRowIdx(rowIdxDirectlyToTheBottom),
+        colIdx: this.state.editedCell.colIdx
+      },
+      cellsSelection: {
+        rowIdx: {min: rowIdxDirectlyToTheBottom, max: rowIdxDirectlyToTheBottom, from: rowIdxDirectlyToTheBottom},
+        colIdx: {min: this.state.cellsSelection.colIdx.min, max: this.state.cellsSelection.colIdx.min, from: this.state.cellsSelection.colIdx.min}
+      },
+      userInput: this.props.data[rowIdxDirectlyToTheBottom][this.state.editedCell.colIdx].caption
+    });
+  }
+
+  cleanEdition() {
+    if(this.props.onChange !== undefined && this.state.editedCell !== undefined) {
+      this.props.onChange([{rowIdx: this.getDataRowIdx(this.state.editedCell.rowIdx), colIdx: this.state.editedCell.colIdx, value: this.state.userInput}]);
+      this.setState({
+        editedCell: undefined,
+        userInput: undefined
+      })
+    }
+  }
+
+  onChange(e) {
+    this.setState({userInput: e.target.value});
   }
 
   // Utils 
@@ -365,10 +522,78 @@ class Table extends React.Component {
     }
   }
 
+  onKeydown(e) {
+    if(this.isASingleCellSelected()) {
+      if(!e.ctrlKey && this.props.onChange !== undefined && this.state.editedCell === undefined && keyboard.isAlphaNumeric(e.keyCode)) {
+        this.enterEdition(e);
+      }
+      else if(this.state.editedCell !== undefined) {
+        if(keyboard.isTab(e)) {
+          this.moveEditionHorizontally(!e.shiftKey);
+          e.preventDefault();
+        }
+        else if(keyboard.isEnter(e)) {
+          this.moveEditionVertically(!e.shiftKey);
+        }
+      }
+      
+      else if(keyboard.isLeftArrow(e)) {
+        this.moveSelectionHorizontally(false);
+      }
+      else if(keyboard.isRightArrow(e)) {
+        this.moveSelectionHorizontally(true);
+      }
+      else if(keyboard.isUpArrow(e)) {
+        this.moveSelectionVertically(false);
+      }
+      else if(keyboard.isDownArrow(e)) {
+        this.moveSelectionVertically(true);
+      }
+    }
+  }
+
+  onKeyup(e) {
+    if(keyboard.isEscape(e)) {
+      if(this.state.editedCell !== undefined) {
+        this.cleanEdition();
+      }
+      else if(this.state.cellsSelection !== undefined) {
+        this.setState({cellsSelection: undefined})
+      }
+    }
+    else if(this.state.cellsSelection !== undefined) {
+      if(keyboard.isCopy(e)) {
+        this.copySelection();
+      }
+      else if(keyboard.isCut(e)) {
+        this.cutSelection();
+      }
+      else if(keyboard.isDelete(e)) {
+        this.deleteSelection();
+      }
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if(nextProps.data !== this.props.data) {
+      const liveRows = nextProps.data.slice(nextProps.frozenRowsCount);
+      const frozenRows = nextProps.data.slice(0, nextProps.frozenRowsCount);
+      this.setState({
+        frozenRows,
+        liveHeaders: liveRows[0].slice(nextProps.frozenColumnsCount),
+        frozenHeaders: liveRows[0].slice(0, nextProps.frozenColumnsCount),
+        liveRows,
+        data: frozenRows.concat(liveRows.slice(this.state.topIdx, this.state.topIdx + this.getNumberOfRowsThatFit(this.state.topIdx || 0)))
+      });
+    }
+  }
+
   componentDidMount() {
     document.addEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mouseup', this.onMouseUp);
-    document.addEventListener('keyup', this.onCopySelection);
+    document.addEventListener('keydown', this.onKeydown);
+    document.addEventListener('keyup', this.onKeyup);
+    document.addEventListener('paste', this.paste);
     this.setState({
       data: this.state.frozenRows.concat(this.state.liveRows.slice(0, this.getNumberOfRowsThatFit(0)))
     });
@@ -377,7 +602,9 @@ class Table extends React.Component {
   componentWillUnmount() {
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
-    document.removeEventListener('keyup', this.onCopySelection);
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyup);
+    document.removeEventListener('paste', this.paste);
   }
 
   columnRef(colIdx, elt) {
@@ -435,6 +662,10 @@ class Table extends React.Component {
         selectHintColor={selectHintColor}
         selectHintBorderColor={selectHintBorderColor}
         resizeHintColor={resizeHintColor}
+        onEdit={this.onEdit}
+        editedRowIdx={(this.state.editedCell !== undefined && this.state.editedCell.colIdx === colIdx) ? this.state.editedCell.rowIdx : undefined}
+        userInput={(this.state.editedCell !== undefined && this.state.editedCell.colIdx === colIdx) ? this.state.userInput : undefined}
+        onChange={this.onChange}
       />
   }
 

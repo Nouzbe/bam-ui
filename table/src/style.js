@@ -23,7 +23,6 @@ const styles = {
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     padding: '3px',
-    background: '#e6e6e6',
   },
   'bt-header-right-border': {
     float: 'right', 
@@ -51,7 +50,6 @@ const styles = {
     boxSizing: 'border-box',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
-    padding: '3px',
     borderRight: '1px solid #d3d3d3',
     borderBottom: '1px solid #d3d3d3',
   },
@@ -77,6 +75,17 @@ const styles = {
     top: 0,
     zIndex: 5,
     boxSizing: 'border-box'
+  },
+  'bt-input': {
+    height: '100%',
+    width: '100%',
+    boxShadow: 'inset 0px 0px 2px 0px #656565',
+    outline: 'none',
+    border: 'none',
+    fontSize: 16,
+    boxSizing: 'border-box',
+    padding: 2,
+    background: '#fbfbfb'
   }
 };
 
