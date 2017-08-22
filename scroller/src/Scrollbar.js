@@ -1,5 +1,4 @@
 import React from 'react';
-import _ from 'lodash';
 
 import style from './style.js';
 
@@ -7,17 +6,25 @@ class ScrollBar extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            hoveringHandle: false,
             dragging: false,
             initialMouseOffset: 0,
-            offset: 0,
             hovering: false
         };
         this.onDragStart = this.onDragStart.bind(this);
-        this.onDrag = _.throttle(this.onDrag, 30).bind(this);
+        this.onDrag = this.onDrag.bind(this);
         this.onDragEnd = this.onDragEnd.bind(this);
         this.onMouseWheel = this.onMouseWheel.bind(this);
         this.onGuideClick = this.onGuideClick.bind(this);
+        this.onMouseEnter = this.onMouseEnter.bind(this);
+        this.onMouseLeave = this.onMouseLeave.bind(this);
         this.delegate = this.delegate.bind(this);
+    }
+    onMouseEnter() {
+        this.setState({hoveringHandle: true});
+    }
+    onMouseLeave() {
+        this.setState({hoveringHandle: false});
     }
     delegate(value, relative) {
         const max = relative ? 1 : (this.props.horizontal ? this.guide.offsetWidth : this.guide.offsetHeight) - this.props.handleSize;
@@ -76,7 +83,7 @@ class ScrollBar extends React.Component {
         if(!this.props.visible) return 0;
         if(!this.props.floating) return 1;
         if(this.state.dragging) return 0.9;
-        if(this.props.hoveringScrollbar) return 0.7;
+        if(this.state.hoveringHandle) return 0.7;
         if(this.props.hoveringContent) return 0.6;
         return 0;
     }
@@ -95,10 +102,8 @@ class ScrollBar extends React.Component {
             <div 
                 className={style(`bs-guide${this.props.floating ? '-floating' : ''}`, this.props.guideStyle)} 
                 style={{
-                    height: this.props.horizontal ? this.props.guideHeight : `calc(100% - ${this.props.offset}px)`,
-                    width: this.props.horizontal ? `calc(100% - ${this.props.offset}px)` : this.props.guideWidth,
-                    top: (!this.props.horizontal && this.props.offset) ? this.props.offset : 'initial',
-                    left: (this.props.horizontal && this.props.offset) ? this.props.offset : 'initial',
+                    height: this.props.horizontal ? this.props.guideHeight : `100%`,
+                    width: this.props.horizontal ? `100%` : this.props.guideWidth,
                     bottom: this.props.horizontal ? 0 : 'initial',
                     right: this.props.horizontal ? 'initial' : 0,
                     opacity: this.getOpacity()
@@ -117,6 +122,8 @@ class ScrollBar extends React.Component {
                         left: this.getLeft()
                     }}
                     onMouseDown={e => e.button === 0 ? this.onDragStart(e) : null}
+                    onMouseEnter={this.onMouseEnter}
+                    onMouseLeave={this.onMouseLeave}
                     ref={elt => this.scrollbar = elt}
                     onClick={this.preventClickPropagation} // prevent parent from scrolling to click offset
                 />

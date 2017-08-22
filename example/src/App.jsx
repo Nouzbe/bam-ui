@@ -22,7 +22,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: [header].concat(this.multiply(data))
+      data: [[{ caption: '#', value: '#' }].concat(header)].concat(this.multiply(data))
     }
     this.onChange = this.onChange.bind(this);
   }
@@ -38,7 +38,9 @@ class App extends React.Component {
   }
   render() {
     return (
-      <Table data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
+      <div style={{position: 'absolute', height: 500, width: 1000, top: 200, left: 300}}>
+        <Table data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
+      </div>
     );
   }
 }

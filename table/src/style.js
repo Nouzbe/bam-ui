@@ -8,10 +8,6 @@ const styles = {
     overflow: 'hidden',
     cursor: 'default'
   },
-  'bt-header-container': {
-    width: '100%',
-    position: 'relative'
-  },
   'bt-header': {
     float: 'left',
     width: '100%',
@@ -24,22 +20,22 @@ const styles = {
     whiteSpace: 'nowrap',
     padding: '3px',
   },
-  'bt-header-right-border': {
+  'bt-right-border': {
     float: 'right', 
     position: 'absolute',
-    right: 0,
+    top: 0,
+    right: -4,
     width: 8, 
     height: '100%', 
     backgroundColor: 'transparent',
     cursor: 'ew-resize'
   },
-  'bt-header-bottom-border': {
+  'bt-bottom-border': {
     height: 8,
     backgroundColor: 'transparent',
     width: '100%',
     position: 'absolute',
-    bottom: 0,
-    zIndex: 2,
+    bottom: -4,
     cursor: 'ns-resize'
   },
   'bt-cell-container': {
@@ -51,7 +47,7 @@ const styles = {
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     borderRight: '1px solid #d3d3d3',
-    borderBottom: '1px solid #d3d3d3',
+    borderBottom: '1px solid #d3d3d3'
   },
   'bt-column': {
     float: 'left',

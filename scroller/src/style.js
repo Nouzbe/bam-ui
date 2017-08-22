@@ -3,13 +3,11 @@ import { css } from 'glamor';
 const styles = {
   'bs-guide': {
     boxSizing: 'border-box', 
-    borderRight: '1px solid #b3b3b3',
     width: '15px',
     position: 'absolute',
   },
   'bs-guide-floating': {
     boxSizing: 'border-box', 
-    borderRight: '1px solid #b3b3b3',
     width: '15px',
     position: 'absolute',
     opacity: 0,
@@ -20,7 +18,8 @@ const styles = {
   },
   'bs-handle': {
     backgroundColor: '#999999',
-    position: 'absolute'
+    position: 'absolute',
+    zIndex: 1000
   },
   'bs-container': {
     position: 'initial',
