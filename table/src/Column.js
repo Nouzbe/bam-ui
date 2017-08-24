@@ -14,7 +14,6 @@ class Column extends React.Component {
         this.onMoveStart = this.onMoveStart.bind(this);
         this.onSelectCellsStart = this.onSelectCellsStart.bind(this);
         this.onEdit = this.onEdit.bind(this);
-        this.ref = this.ref.bind(this);
     }
 
     onResizeWidthStart(initialOffset) {
@@ -37,10 +36,6 @@ class Column extends React.Component {
         this.props.onEdit(rowIdx, this.props.displayColIdx);
     }
     
-    ref(elt) {
-        if(this.props.columnRef) this.props.columnRef(this.props.displayColIdx, elt);
-    }
-    
     shouldComponentUpdate(nextProps, nextState) {
         const propKeys = _.union(Object.keys(nextProps) || [], Object.keys(this.props) || []);
         for (let i = 0; i < propKeys.length; i++) {
@@ -49,6 +44,14 @@ class Column extends React.Component {
             }
         }
         return false;
+    }
+
+    componentDidMount() {
+        this.props.columns !== undefined ? this.props.columns[this.props.displayColIdx] = this.container : undefined;
+    }
+
+    componentWillUnmount() {
+        this.props.columns !== undefined ? delete this.props.columns[this.props.displayColIdx] : undefined;
     }
 
     renderCell(rowIdx) {
@@ -62,9 +65,8 @@ class Column extends React.Component {
         }
         return <Cell 
             key={`cell-${this.props.dataColIdx}-${rowIdx}`}
-            cell={this.props.data[rowIdx][this.props.dataColIdx]}
+            cell={(rowIdx >= 0 ? this.props.data[rowIdx] : this.props.header)[this.props.dataColIdx]}
             rowIdx={rowIdx}
-            colIdx={this.props.displayColIdx}
             height={this.props.rowHeights[rowIdx] || this.props.defaultRowHeight}
             frozen={this.props.frozen}
             onResizeHeightStart={this.onResizeHeightStart}
@@ -81,6 +83,11 @@ class Column extends React.Component {
             isEdited={this.props.editedRowIdx === rowIdx}
             userInput={this.props.editedRowIdx === rowIdx ? this.props.userInput : undefined}
             onChange={this.props.onChange}
+
+            rows={this.props.rows}            
+
+            cellRenderer={this.props.cellRenderer}
+            getter={this.props.getter}
         />
     }
 
@@ -88,7 +95,7 @@ class Column extends React.Component {
         if(this.props.topRowIdx === undefined || this.props.bottomRowIdx === undefined) return null;
         const rowRange = Array.apply(null, {length: this.props.bottomRowIdx - this.props.topRowIdx}).map(Function.call, i => this.props.topRowIdx + i);
         return (
-            <div className={style('bt-column')} style={{width: this.props.columnWidths[this.props.dataColIdx] || this.props.defaultWidth}} ref={this.ref}>
+            <div className={style('bt-column')} style={{width: this.props.columnWidths[this.props.dataColIdx] || this.props.defaultWidth}} ref={elt => this.container = elt}>
                 {rowRange.map(rowIdx => this.renderCell(rowIdx))}
                 <TranslucentLayer visible={this.props.isMoving} style={{width: this.props.columnWidth, background: constants.moveHintColor, zIndex: 5}}/>
                 <FloatingBorder left visible={this.props.isMoveTarget} offset={0} color={constants.moveHintBorderColor} width={2}/>

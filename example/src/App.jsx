@@ -8,7 +8,7 @@ import Scroller from 'bam-scroller';
 import store from './store.js';
 import actions from './actions.js';
 
-import {data, header} from './data/data.js';
+import {simplerData, simplerHeader} from './data/data.js';
 
 const history = createHistory();
 history.listen((location, action) => {
@@ -22,24 +22,24 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: [[{ caption: '#', value: '#' }].concat(header)].concat(this.multiply(data))
+      data: this.multiply(simplerData)
     }
     this.onChange = this.onChange.bind(this);
   }
   onChange(newCells) {
     const newData = this.state.data.slice(0);
-    newCells.map(o => newData[o.rowIdx][o.colIdx] = {caption: o.value, value: o.value});
+    newCells.map(o => newData[o.rowIdx][o.colIdx] = o.value);
     this.setState({data: newData});
   }
   multiply(arr) {
     let arrays = Array.apply(null, new Array(factor));
-    arrays = arrays.map((a, i) => arr.map((r, j) => [{caption: i * arr.length + j}].concat(r)));
+    arrays = arrays.map((a, i) => arr.map((r, j) => [i * arr.length + j].concat(r)));
     return [].concat.apply([], arrays);
   }
   render() {
     return (
       <div style={{position: 'absolute', height: 500, width: 1000, top: 200, left: 300}}>
-        <Table data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
+        <Table header={['#'].concat(simplerHeader)} data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
       </div>
     );
   }

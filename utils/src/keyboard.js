@@ -18,6 +18,14 @@ const isUpArrow = e => e.keyCode === 38;
 
 const isDownArrow = e => e.keyCode === 40;
 
+const isPageDown = e => e.keyCode === 34;
+
+const isPageUp = e => e.keyCode === 33;
+
+const isHome = e => e.keyCode === 36;
+
+const isEnd = e => e.keyCode === 35;
+
 const isCopy = event => event.ctrlKey && event.keyCode === 67;
 
 const isCut = event => event.ctrlKey && event.keyCode === 88;
@@ -43,5 +51,9 @@ export default {
     isLeftArrow,
     isRightArrow,
     isUpArrow,
-    isDownArrow
+    isDownArrow,
+    isHome,
+    isEnd,
+    isPageUp,
+    isPageDown
 };

@@ -17,8 +17,7 @@ const styles = {
     borderBottom: '1px solid #b3b3b3',
     textAlign: 'center',
     overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    padding: '3px',
+    whiteSpace: 'nowrap'
   },
   'bt-right-border': {
     float: 'right', 

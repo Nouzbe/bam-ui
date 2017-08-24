@@ -9,14 +9,16 @@ const moveCursorAtEnd = e => {
     e.target.value = tmp;
 }
 
+const defaultRenderer = props => <div style={{padding: 3}}>{props.getter(props.cell)}</div>
+
 class Cell extends React.Component {
     constructor(props) {
         super(props);
-        this.ref = this.ref.bind(this);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onResizeHeightStart = this.onResizeHeightStart.bind(this);
         this.onResizeWidthStart = this.onResizeWidthStart.bind(this);
     }
+
     shouldComponentUpdate(nextProps, nextState) {
         const propKeys = _.union(Object.keys(nextProps) || [], Object.keys(this.props) || []);
         for(let i = 0; i < propKeys.length; i++) {
@@ -26,18 +28,21 @@ class Cell extends React.Component {
         }
         return false;
     }
+
     onResizeWidthStart(e) {
         if(e.button === 0) {
             e.stopPropagation();
             this.props.onResizeWidthStart(this.container.offsetWidth - e.clientX);
         }
     }
+
     onResizeHeightStart(e) {
         if(e.button === 0) {
             e.stopPropagation();
             this.props.onResizeHeightStart(this.props.rowIdx, this.container.offsetHeight - e.clientY);
         }
     }
+
     onMouseDown(e) {
         if(e.button === 0) {
             if(this.props.onMoveStart) {
@@ -48,14 +53,24 @@ class Cell extends React.Component {
             }
         }
     }
-    ref(elt) {
-        this.container = elt;
-        if(this.props.rowRef) this.props.rowRef(this.props.rowIdx, elt)
+
+    componentWillReceiveProps(nextProps) {
+        this.props.rows !== undefined && nextProps.rows === undefined ? delete this.props.rows[this.props.rowIdx] : undefined;
+        this.props.rows === undefined && nextProps.rows !== undefined ? nextProps.rows[this.props.rowIdx] = this.container : undefined;
     }
+
+    componentDidMount() {
+        this.props.rows !== undefined ? this.props.rows[this.props.rowIdx] = this.container : undefined;
+    }
+
+    componentWillUnmount() {
+        this.props.rows !== undefined && this.props.rows[this.props.rowIdx] === this.container ? delete this.props.rows[this.props.rowIdx] : undefined;
+    }
+    
     render() {
         return (
             <div 
-                ref={this.ref}
+                ref={elt => this.container = elt}
                 className={style('bt-cell-container')}
                 onMouseDown={this.onMouseDown}
                 onDoubleClick={e => e.button === 0 ? this.props.onEdit(this.props.rowIdx) : null}
@@ -68,7 +83,7 @@ class Cell extends React.Component {
                     {this.props.isEdited ? 
                         <input autoFocus className={style('bt-input')} value={this.props.userInput} onFocus={moveCursorAtEnd} onChange={this.props.onChange}/>
                     :
-                        <div style={{padding: 3}}>{this.props.cell ? this.props.cell.caption: 'undefined'}</div>
+                        (this.props.cellRenderer || defaultRenderer)(this.props)
                     }
                 </div>
                 <div className={style("bt-bottom-border")} onMouseDown={this.onResizeHeightStart}/>
