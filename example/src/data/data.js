@@ -55,3 +55,33 @@ export const simplerData = [['8395271', '4159382', 'Shared room', '', '24', '0',
 ['14393240', '27300004', 'Entire home/apt', '', '24', '2', '0.0', '4', '2.0', '119.0', '', '56.152682', '10.203554', '2017-03-30 22:27:09.957772'],
 ['5710368', '7401636', 'Entire home/apt', '', '24', '1', '0.0', '3', '1.0', '112.0', '', '56.163529', '10.216265', '2017-03-30 22:27:09.944667'],
 ['6046960', '20254949', 'Entire home/apt', '', '24', '5', '5.0', '2', '1.0', '90.0', '', '56.143106', '10.207473', '2017-03-30 22:26:57.983068']];
+
+export const pivotHeader = ['Continent', 'Country', 'City', 'Inhabitants', 'Moneys', 'Science'];
+
+export const pivotData = [
+    ['Europe', 'France', 'Paris', 1, 2, 3],
+    ['Europe', 'France', 'Lyon', 4, 5, 6],
+    ['Europe', 'UK', 'London', 7, 8, 9],
+    ['Europe', 'UK', 'Liverpool', 10, 11, 12],
+    ['Europe', 'UK', 'Bristol', 13, 14, 15],
+    ['Europe', 'UK', 'Brighton', 16, 17, 18],
+    ['Europe', 'Germany', 'Berlin', 19, 20, 21],
+    ['Europe', 'Austria', 'Vienna', 22, 23, 24],
+    ['Europe', 'Austria', 'Salzburg', 25, 26, 27],
+    ['Asia', 'China', 'Beijing', 28, 29, 30],
+    ['Asia', 'China', 'Shangai', 31, 32, 33],
+    ['Asia', 'Japan', 'Tokyo', 34, 35, 36],
+    ['Asia', 'Vietnam', 'Hanoi', 37, 38, 39],
+    ['Asia', 'Vietnam', 'Saigon', 40, 41, 42],
+    ['Africa', 'Congo', 'Kinshasa', 43, 44, 45],
+    ['Africa', 'Congo', 'Brazzaville', 46, 47, 48],
+    ['America', 'USA', 'New York', 49, 50, 51],
+    ['America', 'USA', 'San Francisco', 52, 53, 54],
+    ['America', 'USA', 'Los Angeles', 55, 56, 57],
+    ['America', 'USA', 'Washington', 58, 59, 60],
+    ['America', 'USA', 'Detroit', 61, 62, 63],
+    ['America', 'USA', 'Orlando', 64, 65, 66],
+    ['America', 'Brasil', 'Rio de Janeiro', 67, 68, 69],
+    ['America', 'Brasil', 'Sao Paulo', 70, 71, 72],
+    ['America', 'Brasil', 'Brasilia', 73, 74, 75],
+];

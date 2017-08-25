@@ -8,7 +8,7 @@ import Scroller from 'bam-scroller';
 import store from './store.js';
 import actions from './actions.js';
 
-import {simplerData, simplerHeader} from './data/data.js';
+import {pivotData, pivotHeader} from './data/data.js';
 
 const history = createHistory();
 history.listen((location, action) => {
@@ -16,30 +16,39 @@ history.listen((location, action) => {
   store.dispatch(actions.goto(route));
 });
 
-const factor = 10;
+const factor = 1;
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: this.multiply(simplerData)
+      data: this.multiply(pivotData)
     }
     this.onChange = this.onChange.bind(this);
+    this.onConfigChange = this.onConfigChange.bind(this);
   }
   onChange(newCells) {
     const newData = this.state.data.slice(0);
     newCells.map(o => newData[o.rowIdx][o.colIdx] = o.value);
     this.setState({data: newData});
   }
+  onConfigChange(newConfig) {
+    console.log('config changed !');
+  }
   multiply(arr) {
     let arrays = Array.apply(null, new Array(factor));
-    arrays = arrays.map((a, i) => arr.map((r, j) => [i * arr.length + j].concat(r)));
+    arrays = arrays.map(() => arr);
     return [].concat.apply([], arrays);
   }
   render() {
     return (
       <div style={{position: 'absolute', height: 500, width: 1000, top: 200, left: 300}}>
-        <Table header={['#'].concat(simplerHeader)} data={this.state.data} frozenRowsCount={3} frozenColumnsCount={2} onChange={this.onChange}/>
+        <Table 
+          header={pivotHeader}
+          data={this.state.data}
+          onChange={this.onChange}
+          configuration={{frozenRowsCount:1, frozenColumnsCount:3, columns: {1: {merged: true}, 0: {merged: true}}}}
+          onConfigurationChange={this.onConfigChange} />
       </div>
     );
   }

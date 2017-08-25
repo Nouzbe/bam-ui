@@ -6,7 +6,9 @@ const styles = {
     height: '100%',
     width: '100%',
     overflow: 'hidden',
-    cursor: 'default'
+    cursor: 'default',
+    outline: 'none',
+    overflow: 'hidden'
   },
   'bt-header': {
     float: 'left',
@@ -81,6 +83,18 @@ const styles = {
     boxSizing: 'border-box',
     padding: 2,
     background: '#fbfbfb'
+  },
+  'bt-horizontal-border': {
+    position: 'absolute',
+    height: 1,
+    background: '#b3b3b3',
+    zIndex: 3
+  },
+  'bt-vertical-border': {
+    position: 'absolute',
+    width: 1,
+    background: '#b3b3b3',
+    zIndex: 3
   }
 };
 

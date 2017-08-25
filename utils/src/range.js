@@ -1,0 +1,1 @@
+export default (from, to) => Array.apply(null, {length: to - from}).map(Function.call, i => from + i);

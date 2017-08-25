@@ -29,7 +29,6 @@ const styles = {
   },
   'bs-content': {
     position: 'relative', 
-    height: '100%',
     float: 'left',
     transition: 'top 30ms, left 30ms'
   }
