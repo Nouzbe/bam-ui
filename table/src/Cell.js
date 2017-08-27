@@ -9,7 +9,19 @@ const moveCursorAtEnd = e => {
     e.target.value = tmp;
 }
 
-const defaultRenderer = props => <div style={{padding: 3}}>{props.getter(props.cell)}</div>
+const defaultRenderer = props => (
+    <div 
+        style={{
+            padding: 3,
+            borderRight: props.frozen ? '1px solid #b3b3b3' : '1px solid #d3d3d3',
+            borderBottom: props.frozen ? '1px solid #b3b3b3' : '1px solid #d3d3d3',
+            height: '100%',
+            boxSizing: 'border-box'
+        }}
+    >
+        {props.getter(props.cell)}
+    </div>
+);
 
 class Cell extends React.Component {
     constructor(props) {
@@ -32,14 +44,14 @@ class Cell extends React.Component {
     onResizeWidthStart(e) {
         if(e.button === 0) {
             e.stopPropagation();
-            this.props.onResizeWidthStart(this.container.offsetWidth - e.clientX);
+            this.props.onResizeWidthStart();
         }
     }
 
     onResizeHeightStart(e) {
         if(e.button === 0) {
             e.stopPropagation();
-            this.props.onResizeHeightStart(this.props.rowIdx, this.container.offsetHeight - e.clientY);
+            this.props.onResizeHeightStart(this.props.rowIndexes);
         }
     }
 

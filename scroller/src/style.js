@@ -30,8 +30,11 @@ const styles = {
   'bs-content': {
     position: 'relative', 
     float: 'left',
-    transition: 'top 30ms, left 30ms'
+    transition: 'top 30ms, left 30ms',
+    MozTransition: 'top 30ms, left 30ms',
+    WebkitTransition: 'top 30ms, left 30ms',
+    width: '100%'
   }
 };
 
-export default (className, style) => `${className} ${css(Object.assign(styles[className], style || {}))}`;
+export default (className, style) => `${className} ${css(styles[className])}`;

@@ -120,7 +120,7 @@ class Scroller extends React.Component {
     }
     componentWillReceiveProps(nextProps) {
         if(nextProps.virtualHeight !== this.props.virtualHeight || nextProps.virtualWidth !== this.props.virtualWidth) {
-            this.refreshSizes();
+            this.onResize();
         }
         if(nextProps.verticalScroll !== this.props.verticalScroll) {
             this.onVerticalScroll(Math.max(0, Math.min(1, nextProps.verticalScroll)));
@@ -155,8 +155,9 @@ class Scroller extends React.Component {
                     value={this.state.verticalScroll}
                     onValueChange={this.onVerticalScroll}
                     floating={this.props.floating}
-                    hoveringContent={this.state.hoveringContent}
+                    hoveringContent={this.state.hoveringContent || this.props.forceVisible}
                     visible={isVerticalScrollbarVisible}
+                    extraWheelElements={this.props.extraWheelElements}
                 /> : null}
                 
             </div>
@@ -171,33 +172,12 @@ class Scroller extends React.Component {
                 value={this.state.horizontalScroll}
                 onValueChange={this.onHorizontalScroll}
                 floating={this.props.floating}
-                hoveringContent={this.state.hoveringContent}
+                hoveringContent={this.state.hoveringContent || this.props.forceVisible}
                 visible={isHorizontalScrollbarVisible}
+                extraWheelElements={this.props.extraWheelElements}
             /> : null}
         </div>
     }
 }
 
 export default Scroller;
-
-/*
-
-continuousMouseWheelDown(horizontal) {
-        if(this.shouldWheelDownContinuously && this.state.verticalHandleHeight < 100) {
-            if(this.state.verticalScroll < 1) {
-                this.onVerticalScroll(Math.min(1, Math.max(0, this.state.verticalScroll + 100 * this.getVerticalSensitivity())));
-            }
-            setTimeout(this.continuousMouseWheelDown, 60);
-        }
-        
-    }
-    continuousMousewheelRight() {
-        if(this.shouldWheelRightContinuously && this.state.horizontalHandleWidth < 100) {
-            if(this.state.horizontalScroll < 1) {
-                this.onHorizontalScroll(Math.min(1, Math.max(0, this.state.horizontalScroll + 100 * this.getHorizontalSensitivity())));
-            }
-            setTimeout(this.continuousMousewheelRight, 60);
-        }
-    }
-
-*/

@@ -34,9 +34,11 @@ class ScrollBar extends React.Component {
     onMouseWheel(e) {
         if(!this.guide) {
             this.delegate(0, true);
-            this.props.container.removeEventListener('mousewheel', this.onMouseWheel);
+            this.props.container.removeEventListener('wheel', this.onMouseWheel);
         }
-        else if((this.props.horizontal && e.shiftKey) || (!this.props.horizontal && !e.shiftKey)) {
+        else if(((this.props.horizontal && e.shiftKey) || (!this.props.horizontal && !e.shiftKey)) && this.props.visible) {
+            e.stopPropagation();
+            e.preventDefault();
             const value =  this.props.value + this.props.sensitivity * e.deltaY;
             this.delegate(value, true);
         }
@@ -47,6 +49,9 @@ class ScrollBar extends React.Component {
     onDragStart(e) { 
         this.setState({dragging: true, initialMouseOffset: this.getMouseOffset(e)});
         document.getElementsByTagName('body')[0].style.userSelect = 'none';
+        document.getElementsByTagName('body')[0].style['-moz-user-select'] = 'none';
+        document.getElementsByTagName('body')[0].style['-webkit-user-select'] = 'none';
+        document.getElementsByTagName('body')[0].style['-ms-user-select'] = 'none';
     }
     onDrag(e) {
         if(this.state.dragging) {
@@ -58,6 +63,9 @@ class ScrollBar extends React.Component {
         if(this.state.dragging) {
             this.setState({dragging: false});
             document.getElementsByTagName('body')[0].style.userSelect = 'auto';
+            document.getElementsByTagName('body')[0].style['-moz-user-select'] = 'auto';
+            document.getElementsByTagName('body')[0].style['-webkit-user-select'] = 'auto';
+            document.getElementsByTagName('body')[0].style['-ms-user-select'] = 'auto';
         }
     }
     onGuideClick(e) {
@@ -90,37 +98,39 @@ class ScrollBar extends React.Component {
     componentDidMount() {
         document.addEventListener('mousemove', this.onDrag);
         document.addEventListener('mouseup', this.onDragEnd);
-        this.props.container.addEventListener('mousewheel', this.onMouseWheel);
+        this.props.container.addEventListener('wheel', this.onMouseWheel);
+        (this.props.extraWheelElements || []).map(elt => elt.addEventListener('mousewheel', this.onMouseWheel));
     }
     componentWillUnmout() {
         document.removeEventListener('mousemove', this.onDrag);
         document.removeEventListener('mouseup', this.onDragEnd);
-        this.props.container.removeEventListener('mousewheel', this.onMouseWheel);
+        this.props.container.removeEventListener('wheel', this.onMouseWheel);
+        (this.props.extraWheelElements || []).map(elt => elt.removeEventListener('mousewheel', this.onMouseWheel));
     }
     render() {
         return (
             <div 
-                className={style(`bs-guide${this.props.floating ? '-floating' : ''}`, this.props.guideStyle)} 
-                style={{
+                className={style(`bs-guide${this.props.floating ? '-floating' : ''}`)} 
+                style={Object.assign({
                     height: this.props.horizontal ? this.props.guideHeight : `100%`,
                     width: this.props.horizontal ? `100%` : this.props.guideWidth,
                     bottom: this.props.horizontal ? 0 : 'initial',
                     right: this.props.horizontal ? 'initial' : 0,
                     opacity: this.getOpacity()
-                }}
+                }, this.props.guideStyle || {})}
                 ref={elt => this.guide = elt}
                 onClick={this.onGuideClick} // scroll to click offset
                 onMouseEnter={this.props.onMouseEnter}
                 onMouseLeave={this.props.onMouseLeave}
             >
                 <div 
-                    className={style('bs-handle', this.props.handleStyle)}
-                    style={{
+                    className={style('bs-handle')}
+                    style={Object.assign({
                         width: this.props.horizontal ? this.props.handleSize : '100%',
                         height: this.props.horizontal ? '100%' : this.props.handleSize,
                         top: this.getTop(),
                         left: this.getLeft()
-                    }}
+                    }, this.props.handleStyle ||{})}
                     onMouseDown={e => e.button === 0 ? this.onDragStart(e) : null}
                     onMouseEnter={this.onMouseEnter}
                     onMouseLeave={this.onMouseLeave}

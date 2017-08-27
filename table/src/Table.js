@@ -51,7 +51,7 @@ class Table extends React.Component {
       columnWidths: {}, // (idx => width) for every column which width has been changed by user
       virtualHeight: (this.props.data.length + 1 - this.getFrozenRowsCount(props)) * rowHeight, // virtual height of the table body - adding 1 for the header
       offsetTop: 0, // top of the table body (offsetting in order to precisely match the virtual scrolltop value)
-      resizedRowIdx: undefined, // row idx which is being resized
+      resizedRowIndexes: undefined, // row idx which is being resized
       resizedColIdx: undefined, // col idx which is being resized
       frozenColumnsWidth: this.getFrozenColumnsCount(props) * columnWidth, // width of the frozen columns area (in px)
       virtualWidth: (this.props.header.length - this.getFrozenColumnsCount(props)) * columnWidth, // offset width of the live columns area (in px)
@@ -62,7 +62,9 @@ class Table extends React.Component {
       isSelecting: false, // is the user in the process of drag and dropping in order to select cells
       cellsSelection: undefined, // min & max rowIdx & colIdx defining current cells selection
       editedCell: undefined, // {colIdx, rowIdx} of the currently edited cell
-      userInput: undefined // current caption entered by the user in the edited cell
+      userInput: undefined, // current caption entered by the user in the edited cell,
+      hoveringHeader: false,
+      hoveringFrozenColumns: false
     };
     // Scrolling
     this.onVerticalScroll = this.onVerticalScroll.bind(this);
@@ -114,6 +116,8 @@ class Table extends React.Component {
     this.onMouseLeave = this.onMouseLeave.bind(this);
     this.onMouseEnterHeader = this.onMouseEnterHeader.bind(this);
     this.onMouseLeaveHeader = this.onMouseLeaveHeader.bind(this);
+    this.onMouseEnterFrozenColumns = this.onMouseEnterFrozenColumns.bind(this);
+    this.onMouseLeaveFrozenColumns = this.onMouseLeaveFrozenColumns.bind(this);
     this.onKeydown = this.onKeydown.bind(this);
     this.onKeyup = this.onKeyup.bind(this);
   }
@@ -143,11 +147,12 @@ class Table extends React.Component {
   }
 
   getFirstFittingRow(scroll) {
-    const containerOffsetTop = scroll * (this.state.virtualHeight - this.container.offsetHeight);
+    const containerOffsetTop = scroll * Math.max(0, this.state.virtualHeight - this.container.offsetHeight);
     let previousIdx = this.getFrozenRowsCount() - 2;
     let previousBottom = 0;
-    for(let i = 0; i < Object.keys(this.state.rowHeights).length; i++) {
-      const idx = parseInt(Object.keys(this.state.rowHeights)[i], 10);
+    const rowIndexes = Object.keys(this.state.rowHeights).map(i => parseInt(i, 10)).sort();
+    for(let i = 0; i < rowIndexes.length; i++) {
+      const idx = rowIndexes[i];
       if(idx >= this.getFrozenRowsCount() - 1) {
         const height = this.state.rowHeights[idx];
         const top = previousBottom + (idx - previousIdx - 1) * rowHeight;
@@ -170,13 +175,17 @@ class Table extends React.Component {
   }
 
   getFirstFittingColumn(scroll) {
-    const containerOffsetLeft = scroll * (this.state.virtualWidth - this.container.offsetWidth);
+    const containerOffsetLeft = scroll * Math.max(0, this.state.virtualWidth - this.container.offsetWidth);
     let previousIdx = this.getFrozenColumnsCount() - 1;
     let previousRight = 0;
-    for(let i = 0; i < Object.keys(this.state.columnWidths).length; i++) {
-      const idx = parseInt(Object.keys(this.state.columnWidths)[i], 10);
+    const displayColumnWidths = Object.keys(this.state.columnWidths).reduce((acc, dataIdx) => {
+      const displayIdx = _.find(Object.keys(this.state.colIdxMapping), dIdx => '' + this.state.colIdxMapping[dIdx] === dataIdx);
+      return Object.assign(acc, {[displayIdx]: this.state.columnWidths[dataIdx]});
+    }, {})
+    for(let i = 0; i < Object.keys(displayColumnWidths).length; i++) {
+      const idx = parseInt(Object.keys(displayColumnWidths)[i], 10);
       if(idx >= this.getFrozenColumnsCount()) {
-        const width = this.state.columnWidths[idx];
+        const width = this.state.columnWidths[this.state.colIdxMapping[idx]];
         const left = previousRight + (idx - previousIdx - 1) * columnWidth;
         if(left > containerOffsetLeft) {
           break;
@@ -236,39 +245,45 @@ class Table extends React.Component {
 
   // Resizing rows and columns
 
-  onResizeRowHeightStart(rowIdx, initialOffset) {
-    this.initialOffsetY = initialOffset;
-    this.setState({resizedRowIdx: rowIdx});
+  onResizeRowHeightStart(rowIndexes) {
+    this.setState({resizedRowIndexes: rowIndexes});
   }
 
   onResizeRowHeight(clientY) {
-    const newHeight = Math.max(1, clientY + this.initialOffsetY);
-    const previousHeight = this.state.rowHeights[this.state.resizedRowIdx] || rowHeight;
-    const frozenRowsHeight = this.state.frozenRowsHeight + (this.state.resizedRowIdx < this.getFrozenRowsCount() - 1 ? newHeight - previousHeight: 0);
-    const virtualHeight = this.state.virtualHeight + (this.state.resizedRowIdx >= this.getFrozenRowsCount() - 1 ? newHeight - previousHeight : 0);
+    const relevantRows = this.state.resizedRowIndexes[0] < this.getFrozenRowsCount() - 1 ? this.frozenRows : this.rows;
+    const newHeight = Math.max(1, clientY - relevantRows[this.state.resizedRowIndexes[0]].getBoundingClientRect().top);
+    const newRowHeights = Object.assign({}, this.state.rowHeights);
+    let previousHeight = 0;
+    this.state.resizedRowIndexes.map(idx => {
+      previousHeight += this.state.rowHeights[idx] || rowHeight;
+      newRowHeights[idx] = newHeight / this.state.resizedRowIndexes.length
+    });
+    const frozenRowsHeight = this.state.frozenRowsHeight + (this.state.resizedRowIndexes[this.state.resizedRowIndexes.length - 1] < this.getFrozenRowsCount() - 1 ? newHeight - previousHeight: 0);
+    const virtualHeight = this.state.virtualHeight + (this.state.resizedRowIndexes[0] >= this.getFrozenRowsCount() - 1 ? newHeight - previousHeight : 0);
     this.setState({
       virtualHeight,
       frozenRowsHeight,
-      rowHeights: Object.assign({}, this.state.rowHeights, {[this.state.resizedRowIdx]: newHeight})
+      rowHeights: newRowHeights
     });
   }
 
   onResizeRowHeightEnd() {
-    this.setState({resizedRowIdx: undefined});
+    this.setState({resizedRowIndexes: undefined});
   }
 
-  onResizeColumnWidthStart(colIdx, initialOffset) {
-    this.initialOffsetX = initialOffset;
+  onResizeColumnWidthStart(colIdx) {
     this.setState({resizedColIdx: colIdx});
   }
 
   onResizeColumnWidth(clientX) {
-    const newWidth = Math.max(1, clientX + this.initialOffsetX);
-    const previousWidth = this.state.columnWidths[this.state.resizedColIdx] !== undefined ? this.state.columnWidths[this.state.resizedColIdx] : columnWidth;
+    const dataColIdx = this.state.colIdxMapping[this.state.resizedColIdx];
+    const relevantColumns = this.state.resizedColIdx < this.getFrozenColumnsCount() ? this.frozenColumns : this.columns;
+    const newWidth = Math.max(1, clientX - relevantColumns[this.state.resizedColIdx].getBoundingClientRect().left);
+    const previousWidth = this.state.columnWidths[dataColIdx] !== undefined ? this.state.columnWidths[dataColIdx] : columnWidth;
     const frozenColumnsWidth = this.state.frozenColumnsWidth + (this.state.resizedColIdx < this.getFrozenColumnsCount() ? newWidth - previousWidth : 0);
     const virtualWidth = this.state.virtualWidth + (this.state.resizedColIdx >= this.getFrozenColumnsCount() ? newWidth - previousWidth : 0);
     this.setState({
-      columnWidths: Object.assign({}, this.state.columnWidths, {[this.state.resizedColIdx]: newWidth}),
+      columnWidths: Object.assign({}, this.state.columnWidths, {[dataColIdx]: newWidth}),
       frozenColumnsWidth,
       virtualWidth
     });
@@ -311,7 +326,6 @@ class Table extends React.Component {
   // Selecting cells
 
   onSelectCellsStart(rowIdx, displayColIdx) {
-    console.log(this.rows);
     this.cleanEdition();
     this.setState({
       isSelecting: true,
@@ -325,7 +339,7 @@ class Table extends React.Component {
 
   onSelectCells(clientX, clientY) {
     const relevantColumns = Object.values(this.columns);
-    const relevantRows = Object.values(this.rows);
+    const relevantRows = Object.keys(this.rows).map(k => parseInt(k, 10)).sort((a, b) => a - b).map(k => this.rows[k]);
     const firstColIdxRightFromMouse = relevantColumns.findIndex(o => o && o.getBoundingClientRect().right > clientX);
     const firstRowIdxUnderneathMouse = relevantRows.findIndex(o => o && o.getBoundingClientRect().bottom > clientY);
     const colIdxTo = this.state.leftColIdx + (firstColIdxRightFromMouse !== -1 ? Math.max(0, firstColIdxRightFromMouse) : relevantColumns.length);
@@ -413,15 +427,17 @@ class Table extends React.Component {
   // Editing cells
 
   onEdit(dataRowIdx, displayColIdx) {
-    this.setState({
-      cellsSelection: {
-        rowIdx: {min: dataRowIdx, max: dataRowIdx, from: dataRowIdx},
-        colIdx: {min: displayColIdx, max: displayColIdx, from: displayColIdx}
-      },
-      editedCell: {rowIdx: dataRowIdx, colIdx: displayColIdx},
-      userInput: (this.props.getter || defaultGetter)(this.props.data[dataRowIdx][this.state.colIdxMapping[displayColIdx]])
-    });
-    this.initialOffsetTop = this.state.offsetTop;
+    if(this.props.onChange !== undefined) {
+      this.setState({
+        cellsSelection: {
+          rowIdx: {min: dataRowIdx, max: dataRowIdx, from: dataRowIdx},
+          colIdx: {min: displayColIdx, max: displayColIdx, from: displayColIdx}
+        },
+        editedCell: {rowIdx: dataRowIdx, colIdx: displayColIdx},
+        userInput: (this.props.getter || defaultGetter)(this.props.data[dataRowIdx][this.state.colIdxMapping[displayColIdx]])
+      });
+      this.initialOffsetTop = this.state.offsetTop;
+    }
   }
 
   enterEdition(e) {
@@ -550,7 +566,7 @@ class Table extends React.Component {
     if(this.state.resizedColIdx !== undefined) {
       this.onResizeColumnWidth(e.clientX);
     }
-    if(this.state.resizedRowIdx !== undefined) {
+    if(this.state.resizedRowIndexes !== undefined) {
       this.onResizeRowHeight(e.clientY);
     }
     if(this.state.isSelecting) {
@@ -565,7 +581,7 @@ class Table extends React.Component {
     if(this.state.resizedColIdx !== undefined) {
       this.onResizeColumnWidthEnd();
     }
-    if(this.state.resizedRowIdx !== undefined) {
+    if(this.state.resizedRowIndexes !== undefined) {
       this.onResizeRowHeightEnd();
     }
     if(this.state.isSelecting) {
@@ -587,16 +603,26 @@ class Table extends React.Component {
   }
 
   onMouseEnterHeader() {
+    this.setState({hoveringHeader: true});
     this.shouldScrollContinuously = false;
   }
 
   onMouseLeaveHeader(e) {
+    this.setState({hoveringHeader: false});
     this.shouldScrollContinuously = this.state.isSelecting || this.state.movingColumnIdx !== undefined;
     const rect = this.container.getBoundingClientRect();
     this.scrollContinuously(
       e.clientX >= rect.right ? sides.horizontal.right : e.clientX <= rect.left ? sides.horizontal.left : undefined,
       undefined
     );
+  }
+
+  onMouseEnterFrozenColumns() {
+    this.setState({hoveringFrozenColumns: true});
+  }
+
+  onMouseLeaveFrozenColumns(e) {
+    this.setState({hoveringFrozenColumns: false});
   }
 
   onKeydown(e) {
@@ -767,22 +793,29 @@ class Table extends React.Component {
         }}>
           {this.renderArea(0, this.getFrozenColumnsCount(), - 1, this.getFrozenRowsCount() - 1, areas.top.left) /* top left : frozen rows and frozen columns */}
         </div>
-        <div style={{
-          position: 'absolute',
-          top: this.state.frozenRowsHeight,
-          left: 0,
-          height: `calc(100% - ${this.state.frozenRowsHeight}px)`,
-          width: this.state.frozenColumnsWidth,
-          overflow: 'hidden',
-          zIndex: 2
-        }}>
+        <div 
+          ref={elt => this.frozenColumnsContainer = elt}
+          onMouseEnter={this.onMouseEnterFrozenColumns}
+          onMouseLeave={this.onMouseLeaveFrozenColumns}
+          style={{
+            position: 'absolute',
+            top: this.state.frozenRowsHeight,
+            left: 0,
+            height: `calc(100% - ${this.state.frozenRowsHeight}px)`,
+            width: this.state.frozenColumnsWidth,
+            overflow: 'hidden',
+            zIndex: 2
+          }}
+        >
           <div style={{position: 'relative', top: this.state.offsetTop}}>
             {this.renderArea(0, this.getFrozenColumnsCount(), this.state.topRowIdx, this.state.bottomRowIdx, areas.bottom.left) /* bottom left : normal rows but frozen columns */}
           </div>
         </div>
         <div 
+          ref={elt => this.frozenRowsContainer = elt}
           onMouseEnter={this.onMouseEnterHeader}
           onMouseLeave={this.onMouseLeaveHeader}
+          onWheel={this.onMouseWheel}
           style={{
             position: 'absolute',
             top: 0,
@@ -798,7 +831,7 @@ class Table extends React.Component {
           </div>
         </div>
         <div 
-          ref={elt => this.container = elt}
+          ref={elt => elt ? this.container = elt : null}
           onMouseEnter={this.onMouseEnter}
           onMouseLeave={this.onMouseLeave}
           style={{
@@ -817,6 +850,10 @@ class Table extends React.Component {
             onHorizontalScroll={this.onHorizontalScroll}
             horizontalScroll={this.state.horizontalScroll}
             virtualWidth={this.state.virtualWidth}
+            forceVisible={this.state.isSelecting ||this.state.hoveringHeader || this.state.hoveringFrozenColumns || this.state.resizedColIdx !== undefined || this.state.resizedRowIndexes !== undefined}
+            extraWheelElements={[this.frozenColumnsContainer, this.frozenRowsContainer]}
+            guideStyle={this.props.guideStyle}
+            handleStyle={this.props.handleStyle}
           >
             <div style={{height: '100%', width: this.state.virtualWidth, position: 'relative', top: this.state.offsetTop, left: this.state.offsetLeft, borderBottom: '1px solid #b3b3b3'}}>
               {this.renderArea(this.state.leftColIdx, this.state.rightColIdx, this.state.topRowIdx, this.state.bottomRowIdx, areas.bottom.right) /* bottom right : normal rows and normal columns */}

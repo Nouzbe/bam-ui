@@ -8,15 +8,14 @@ const styles = {
     overflow: 'hidden',
     cursor: 'default',
     outline: 'none',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    position: 'relative'
   },
   'bt-header': {
     float: 'left',
     width: '100%',
     height: '100%',
     boxSizing: 'border-box',
-    borderRight: '1px solid #b3b3b3',
-    borderBottom: '1px solid #b3b3b3',
     textAlign: 'center',
     overflow: 'hidden',
     whiteSpace: 'nowrap'
@@ -46,9 +45,7 @@ const styles = {
     height: '100%',
     boxSizing: 'border-box',
     overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    borderRight: '1px solid #d3d3d3',
-    borderBottom: '1px solid #d3d3d3'
+    whiteSpace: 'nowrap'
   },
   'bt-column': {
     float: 'left',

@@ -56,7 +56,7 @@ export const simplerData = [['8395271', '4159382', 'Shared room', '', '24', '0',
 ['5710368', '7401636', 'Entire home/apt', '', '24', '1', '0.0', '3', '1.0', '112.0', '', '56.163529', '10.216265', '2017-03-30 22:27:09.944667'],
 ['6046960', '20254949', 'Entire home/apt', '', '24', '5', '5.0', '2', '1.0', '90.0', '', '56.143106', '10.207473', '2017-03-30 22:26:57.983068']];
 
-export const pivotHeader = ['Continent', 'Country', 'City', 'Inhabitants', 'Moneys', 'Science'];
+export const pivotHeader = ['Continent', 'Country', 'City', 'Things', 'Stuff', 'Kloug'];
 
 export const pivotData = [
     ['Europe', 'France', 'Paris', 1, 2, 3],
@@ -85,3 +85,13 @@ export const pivotData = [
     ['America', 'Brasil', 'Sao Paulo', 70, 71, 72],
     ['America', 'Brasil', 'Brasilia', 73, 74, 75],
 ];
+
+export const loremIpsum = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tempor cursus ante. Sed consequat elementum blandit. Integer placerat congue feugiat. Nulla ultricies nibh et placerat vestibulum. In maximus rhoncus nisi sed fermentum. Fusce fringilla massa sed elementum porttitor. Praesent auctor, eros a imperdiet placerat, diam neque sagittis orci, a lacinia ante lorem id turpis. Proin sit amet condimentum metus. Ut fringilla magna ac eros suscipit, vel fermentum tellus egestas. Aliquam placerat eros sit amet rutrum facilisis.
+
+Pellentesque tristique tristique elit, interdum ornare quam faucibus in. Aliquam scelerisque lectus nisi, vitae semper sem feugiat quis. In rhoncus, ipsum eget placerat euismod, orci est consequat ligula, sed aliquet nulla massa non risus. In urna sapien, efficitur eu tortor in, ultricies congue velit. Quisque aliquam tellus et nisl mattis sodales. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Cras id pharetra ante, et blandit ante. Nulla tincidunt neque lorem, in interdum libero faucibus nec. Cras aliquet justo rhoncus, mollis orci ut, ultricies felis.
+
+Nam ut dolor pretium, tempus nunc vitae, ornare ipsum. Vivamus vitae mattis dui. Integer vitae lacus risus. Curabitur vulputate tempor lorem quis condimentum. Donec eget arcu a magna sollicitudin auctor eget id nisl. Donec vulputate arcu sagittis leo hendrerit ornare. Sed id massa auctor, pellentesque risus vitae, fermentum felis. Suspendisse non convallis nulla. Nulla ut euismod arcu. Donec in sapien feugiat, convallis nulla nec, fermentum risus.
+
+Vivamus lacinia turpis quis tellus cursus varius. Donec vestibulum justo eu finibus feugiat. Nulla imperdiet est vitae tellus auctor, faucibus sollicitudin neque bibendum. Nulla quis aliquet neque. Nam nisi libero, dignissim quis mi id, volutpat bibendum lorem. Nullam eu rhoncus ligula. Maecenas in lectus sed felis auctor porta in quis quam. Nulla egestas nisi eget lorem mattis, vitae sagittis ex venenatis. Nulla quis purus gravida, pretium lectus in, sollicitudin sapien. Donec luctus vel purus at interdum.
+
+Nunc gravida porta interdum. Maecenas mattis ornare quam, in porta neque imperdiet sit amet. Fusce eleifend finibus nulla, et dictum lorem posuere at. Vestibulum tincidunt neque arcu, non luctus nulla volutpat in. Praesent sed scelerisque tellus. Nam faucibus aliquet neque, nec tempor metus vulputate eu. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent non odio eget quam rhoncus maximus. Pellentesque eget justo et quam finibus tincidunt. Quisque lectus nisi, ultrices eu feugiat maximus, lobortis nec ante. In sed lorem lorem. Donec ornare nulla et risus blandit auctor. Donec non massa ac purus fringilla tempor. Maecenas non erat velit. Maecenas orci massa, elementum nec bibendum eu, convallis vitae tortor.`;

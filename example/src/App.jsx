@@ -1,14 +1,16 @@
 import React from 'react';
-import {Provider} from 'react-redux';
+import {Provider, connect} from 'react-redux';
 import {Router, Route} from 'react-router';
 import createHistory from 'history/createBrowserHistory';
 import Table from 'bam-table';
 import Scroller from 'bam-scroller';
+import List from './List.js';
+import Detail from './Detail.js';
 
 import store from './store.js';
 import actions from './actions.js';
 
-import {pivotData, pivotHeader} from './data/data.js';
+import {pivotData, pivotHeader, simplerHeader, simplerData} from './data/data.js';
 
 const history = createHistory();
 history.listen((location, action) => {
@@ -16,40 +18,15 @@ history.listen((location, action) => {
   store.dispatch(actions.goto(route));
 });
 
-const factor = 1;
-
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: this.multiply(pivotData)
-    }
-    this.onChange = this.onChange.bind(this);
-    this.onConfigChange = this.onConfigChange.bind(this);
-  }
-  onChange(newCells) {
-    const newData = this.state.data.slice(0);
-    newCells.map(o => newData[o.rowIdx][o.colIdx] = o.value);
-    this.setState({data: newData});
-  }
-  onConfigChange(newConfig) {
-    console.log('config changed !');
-  }
-  multiply(arr) {
-    let arrays = Array.apply(null, new Array(factor));
-    arrays = arrays.map(() => arr);
-    return [].concat.apply([], arrays);
-  }
   render() {
     return (
-      <div style={{position: 'absolute', height: 500, width: 1000, top: 200, left: 300}}>
-        <Table 
-          header={pivotHeader}
-          data={this.state.data}
-          onChange={this.onChange}
-          configuration={{frozenRowsCount:1, frozenColumnsCount:3, columns: {1: {merged: true}, 0: {merged: true}}}}
-          onConfigurationChange={this.onConfigChange} />
-      </div>
+      <Provider store={store}>
+        <div style={{height: '100%'}}>
+          <List />
+          <Detail />
+        </div>
+      </Provider>
     );
   }
 }
@@ -57,13 +34,52 @@ class App extends React.Component {
 export default App;
 
 /*
-<Scroller floating>
-        <div style={{width: 1000}}>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac tellus diam. Fusce sed elementum ipsum, id pharetra turpis. Sed non metus hendrerit orci placerat auctor eget quis odio. Praesent hendrerit tempus malesuada. Nunc rutrum sapien a massa tincidunt, ut mollis lacus gravida. Sed dolor eros, congue non nunc eget, convallis rutrum eros. Quisque id dolor in ligula tincidunt commodo. Nunc eu justo imperdiet, viverra nunc ut, efficitur ligula. Phasellus tempus, mauris et porttitor vulputate, odio nisl viverra erat, sit amet ultrices odio sem vel velit. Cras at vestibulum ante, vitae consectetur turpis. Morbi ornare, risus vitae sagittis accumsan, justo lectus ornare nisi, sagittis pharetra ligula risus in diam. Donec eget nisi sollicitudin, pulvinar lorem a, ullamcorper massa. Aenean sed ullamcorper ipsum. Etiam in nunc dignissim justo scelerisque sodales.
 
-Duis non purus ac ante vulputate facilisis et at ipsum. Suspendisse volutpat, mauris sit amet eleifend varius, lorem lectus rutrum purus, vitae sodales nulla felis eu massa. Duis tincidunt mi a vehicula tempus. Etiam id ex faucibus, porta eros vulputate, luctus quam. Aliquam ultricies iaculis iaculis. In sit amet tincidunt nibh. Praesent malesuada, odio eget gravida dictum, erat eros rutrum augue, ut consectetur nibh elit at dui. Duis at sagittis turpis. Duis in tristique nisl, sed pretium ligula. Praesent dictum odio nibh, ac dapibus enim sagittis sit amet. Aliquam fermentum tempus leo, nec ultricies erat bibendum quis. Etiam diam mauris, scelerisque nec ullamcorper vel, pharetra in diam.
-
-Suspendisse potenti. Etiam vestibulum hendrerit faucibus. Quisque dictum convallis libero, et pulvinar nisl sodales id. Duis vel eros semper, dignissim metus ut, ornare orci. Quisque et urna nec nunc viverra feugiat. Aliquam rutrum purus sed mauris cursus, at viverra nisl accumsan. Curabitur pharetra pulvinar turpis, eu luctus diam lacinia ut. Ut laoreet nulla sit amet luctus tincidunt. Interdum et malesuada fames ac ante ipsum primis in faucibus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus molestie blandit justo nec maximus.
-
-Donec ac efficitur quam. Donec venenatis turpis orci, sit amet tempus nisi dignissim fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Cras id faucibus quam. Cras eleifend convallis mi sit amet feugiat. Ut dui erat, mollis id consequat vel, hendrerit eu nunc. Donec blandit dolor a est ultrices malesuada. Suspendisse ut maximus metus.
-      </div></Scroller>
+<div style={{height: '100%', width: 1000, marginLeft: 'calc(50% - 500px)', background: '#fff', boxShadow: '0px 0px 2px #888888', overflow: 'hidden'}}>
+          <Scroller floating>
+            <h2 style={{width: 'calc(100% - 20px)', textAlign: 'center', margin: 0, padding: 10}}>UI Experiments</h2>
+            <h4 style={{margin: 10, marginLeft: 20}}>Table</h4>
+            <div className="example" style={{height: 100}}>
+              <Table 
+                header={['Country', 'City', 'Inhabitants', 'Size']}
+                data={[['France', 'Paris', '2 220 445', '105,40 km2'], ['UK', 'London', '8 673 713', '1 572 km2']]}/>
+            </div>
+            <div className="example" style={{height: 150}}>
+              <p>It's possible to freeze rows</p>
+              <Table 
+                header={['Country', 'City', 'Inhabitants', 'Size']} 
+                data={[['France', 'Paris', '2 220 445', '105,40 km2'], ['UK', 'London', '8 673 713', '1 572 km2']]}
+                configuration={{frozenRowsCount: 1}}/>
+            </div>
+            <div className="example" style={{height: 150}}>
+              <p>... and columns too</p>
+              <Table 
+                header={['Country', 'City', 'Inhabitants', 'Size']} 
+                data={[['France', 'Paris', '2 220 445', '105,40 km2'], ['UK', 'London', '8 673 713', '1 572 km2']]}
+                configuration={{frozenRowsCount: 1, frozenColumnsCount: 2}}/>
+            </div>
+            <div className="example" style={{marginBottom: 20}}>
+              <p>Having <b>a lot</b> of rows is not a problem</p>
+              <Table 
+                header={['#'].concat(simplerHeader)} 
+                data={this.state.data}
+                configuration={{frozenRowsCount: 1, frozenColumnsCount: 2}}/>
+            </div>
+            <div className="example" style={{marginBottom: 20}}>
+              <p>Actually while your at it, you can also have <b>a lot</b> of columns</p>
+              <Table 
+                header={['#'].concat(this.multiplyRow(simplerHeader))} 
+                data={this.state.longData}
+                configuration={{frozenRowsCount: 1, frozenColumnsCount: 2}}/>
+            </div>
+            <div className="example" style={{marginBottom: 20}}>
+              <p>Tree-like data structures can be displayed</p>
+              <Table 
+                header={pivotHeader} 
+                data={pivotData}
+                configuration={{frozenRowsCount: 1, frozenColumnsCount: 2, columns: {0: {merged: true}, 1: {merged: true}}}}/>
+            </div>
+            <div style={{width: '100%', height: 50}} />
+          </Scroller>
+        </div>
 */

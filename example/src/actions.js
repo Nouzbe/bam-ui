@@ -42,6 +42,20 @@ const addTab = () => {
   };
 };
 
+const selectComponent = name => {
+  return {
+    type: constants.actions.selectComponent,
+    name
+  }
+};
+
+const selectTableExample = name => {
+  return {
+    type: constants.actions.selectTableExample,
+    name
+  }
+};
+
 const selectTab = id => {
   return {
     type: constants.actions.selectTab,
@@ -81,5 +95,7 @@ export default {
   selectTab,
   removeTab,
   renameTab,
-  goto
+  goto,
+  selectComponent,
+  selectTableExample
 }

@@ -2,6 +2,24 @@ import {createStore, combineReducers} from 'redux';
 import _ from 'lodash';
 import constants from './constants.js';
 
+const selectedComponent = (state = Object.keys(constants.components)[0], action) => {
+  switch(action.type) {
+    case constants.actions.selectComponent:
+      return action.name !== state ? action.name : '';
+    default:
+      return state;
+  }
+};
+
+const selectedTableExample = (state = Object.keys(constants.tableExamples)[0], action) => {
+  switch(action.type) {
+    case constants.actions.selectTableExample:
+      return action.name !== state ? action.name : '';
+    default:
+      return state;
+  }
+};
+
 const todo = (state, action) => {
   switch(action.type) {
     case constants.actions.addTodo:
@@ -130,7 +148,9 @@ const toDoApp = combineReducers({
   tabs,
   selectedTab,
   filter,
-  route
+  route,
+  selectedComponent,
+  selectedTableExample
 });
 
 export default createStore(toDoApp);

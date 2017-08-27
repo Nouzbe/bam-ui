@@ -18,14 +18,15 @@ class Column extends React.Component {
         this.getRowRange = this.getRowRange.bind(this);
         this.findNextIdx = this.findNextIdx.bind(this);
         this.findPreviousIdx = this.findPreviousIdx.bind(this);
+        this.isDifferent = this.isDifferent.bind(this);
     }
 
-    onResizeWidthStart(initialOffset) {
-        this.props.onResizeWidthStart(this.props.dataColIdx, initialOffset);
+    onResizeWidthStart() {
+        this.props.onResizeWidthStart(this.props.displayColIdx);
     }
 
-    onResizeHeightStart(rowIdx, initialOffset) {
-        this.props.onResizeHeightStart(rowIdx, initialOffset);
+    onResizeHeightStart(rowIndexes) {
+        this.props.onResizeHeightStart(rowIndexes);
     }
 
     onMoveStart() {
@@ -43,19 +44,23 @@ class Column extends React.Component {
     shouldComponentUpdate(nextProps, nextState) {
         const propKeys = _.union(Object.keys(nextProps) || [], Object.keys(this.props) || []);
         for (let i = 0; i < propKeys.length; i++) {
-            if (nextProps[propKeys[i]] !== this.props[propKeys[i]]) {
-                return true;
-            }
+            if (nextProps[propKeys[i]] !== this.props[propKeys[i]]) return true;
+        }
+        return false;
+    }
+
+    isDifferent(rowIdx, from) {
+        for(let i = 0; i <= this.props.dataColIdx; i++) {
+            if(this.props.getter(this.props.data[rowIdx][i]) !== this.props.getter(this.props.data[from][i])) return true;
         }
         return false;
     }
 
     findNextIdx(from, reverse) {
-        const value = this.props.getter(this.props.data[from][this.props.dataColIdx]);
         let i = from + (reverse ? -1 : 1);
         let height = reverse ? 0 : this.props.rowHeights[from] || this.props.defaultRowHeight;
         while(i >= 0 && i < this.props.data.length) {
-            if(this.props.getter(this.props.data[i][this.props.dataColIdx]) !== value) return [i, height];
+            if(this.isDifferent(i, from)) return [i, height];
             height += this.props.rowHeights[i] || this.props.defaultRowHeight;
             reverse ? i-- : i++
         }
@@ -110,6 +115,7 @@ class Column extends React.Component {
             key={`cell-${this.props.dataColIdx}-${rowIdx}`}
             cell={(rowIdx >= 0 ? this.props.data[rowIdx] : this.props.header)[this.props.dataColIdx]}
             rowIdx={rowIdx}
+            rowIndexes={indexes}
             height={height}
             frozen={this.props.frozen}
             onResizeHeightStart={this.onResizeHeightStart}
@@ -148,39 +154,3 @@ class Column extends React.Component {
 }
 
 export default Column;
-
-/*
-
-const result = [];
-            let height = 0;
-            let previousValue = this.props.getter(this.props.data[this.props.topRowIdx][this.props.dataColIdx]);
-            let previousIndex = this.props.topRowIdx;
-            for(let i = this.props.topRowIdx + 1; i < this.props.bottomRowIdx - 1; i++) {
-                const value = this.props.getter(this.props.data[i][this.props.dataColIdx]);
-                height += this.props.rowHeights[this.props.topRowIdx + i] || this.props.defaultRowHeight;
-                if(value !== previousValue) {
-                    result.push({
-                        indexes: Array.apply(null, {length: i - previousIndex}).map(Function.call, j => previousIndex + j),
-                        height
-                    });
-                    previousIndex = i;
-                    previousValue = value;
-                    height = 0;
-                }
-            }
-            height += this.props.rowHeights[this.props.bottomRowIdx - 1] || this.props.defaultRowHeight;
-            const lastValue = this.props.getter(this.props.data[this.props.bottomRowIdx - 1][this.props.dataColIdx]);
-            result.push({
-                indexes: Array.apply(null, {length: this.props.bottomRowIdx + (lastValue === previousValue ? 0 : -1) - previousIndex}).map(Function.call, j => previousIndex + j),
-                height
-            });
-            if(lastValue !== previousValue) {
-                result.push({
-                    indexes: [this.props.bottomRowIdx - 1],
-                    height: this.props.rowHeights[this.props.bottomRowIdx - 1] || this.props.defaultRowHeight  
-                });
-            }
-            console.log('merged : ', result);
-            return result;
-
-*/
