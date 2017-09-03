@@ -7,7 +7,6 @@
     "cross-spawn": "^5.1.0",
     "promise-serial": "^0.1.5"
   },
-  "devDependencies": {},
   "scripts": {
     "setup": "node all sequentially yarn",
     "start": "node all parallely yarn start"

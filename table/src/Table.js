@@ -2,6 +2,7 @@ import React from 'react';
 import Scroller from 'bam-scroller';
 import FloatingBorder from './FloatingBorder.js';
 import {clipboard, keyboard, range} from 'bam-utils';
+import _ from 'lodash';
 
 import Column from './Column.js';
 import Cell from './Cell.js';
@@ -49,12 +50,12 @@ class Table extends React.Component {
       horizontalScroll: 0, // horizontal scroll value (from 0 to 1). Only updated when the scroll should be controlled
       rowHeights: {}, // (idx => height) for every row which height has been changed by user
       columnWidths: {}, // (idx => width) for every column which width has been changed by user
-      virtualHeight: (this.props.data.length + 1 - this.getFrozenRowsCount(props)) * rowHeight, // virtual height of the table body - adding 1 for the header
+      virtualHeight: (this.props.data.length - this.getFrozenRowsCount(props)) * rowHeight, // virtual height of the table body - adding 1 for the header
       offsetTop: 0, // top of the table body (offsetting in order to precisely match the virtual scrolltop value)
       resizedRowIndexes: undefined, // row idx which is being resized
       resizedColIdx: undefined, // col idx which is being resized
       frozenColumnsWidth: this.getFrozenColumnsCount(props) * columnWidth, // width of the frozen columns area (in px)
-      virtualWidth: (this.props.header.length - this.getFrozenColumnsCount(props)) * columnWidth, // offset width of the live columns area (in px)
+      virtualWidth: (this.props.data[0].length - this.getFrozenColumnsCount(props)) * columnWidth, // offset width of the live columns area (in px)
       frozenRowsHeight: this.getFrozenRowsCount(props) * rowHeight, // offset height of the frozen rows area (in px),
       movingColumnIdx: undefined, // idx of the column that is being moved by the user
       targetColIdx: undefined, // target future idx of the column that is being moved by the user 
@@ -124,21 +125,19 @@ class Table extends React.Component {
 
   // Scrolling
 
-  onVerticalScroll(scroll) {
+  onVerticalScroll(scroll, forced) {
+    const [topRowIdx, offsetTop] = this.verticalScroll === scroll && !forced ? [this.state.topRowIdx, this.state.offsetTop] :  this.getFirstFittingRow(scroll);
     this.verticalScroll = scroll; // storing the value on this for later use
-    if(this.state.virtualHeight > this.container.offsetHeight || scroll === 0) {
-      const [topRowIdx, offsetTop] = this.getFirstFittingRow(scroll);
-      this.setState({
-        topRowIdx,
-        offsetTop,
-        bottomRowIdx: topRowIdx + this.getNumberOfRowsThatFit(topRowIdx),
-      });
-    }
+    this.setState({
+      topRowIdx,
+      offsetTop,
+      bottomRowIdx: topRowIdx + this.getNumberOfRowsThatFit(topRowIdx),
+    });
   }
 
-  onHorizontalScroll(scroll) {
+  onHorizontalScroll(scroll, forced) {
+    const [leftColIdx, offsetLeft] = this.horizontalScroll === scroll && !forced ? [this.state.leftColIdx, this.state.offsetLeft] : this.getFirstFittingColumn(scroll);
     this.horizontalScroll = scroll;
-    const [leftColIdx, offsetLeft] = this.getFirstFittingColumn(scroll);
     this.setState({
       leftColIdx,
       offsetLeft,
@@ -148,12 +147,12 @@ class Table extends React.Component {
 
   getFirstFittingRow(scroll) {
     const containerOffsetTop = scroll * Math.max(0, this.state.virtualHeight - this.container.offsetHeight);
-    let previousIdx = this.getFrozenRowsCount() - 2;
+    let previousIdx = this.getFrozenRowsCount() - 1;
     let previousBottom = 0;
     const rowIndexes = Object.keys(this.state.rowHeights).map(i => parseInt(i, 10)).sort();
     for(let i = 0; i < rowIndexes.length; i++) {
       const idx = rowIndexes[i];
-      if(idx >= this.getFrozenRowsCount() - 1) {
+      if(idx >= this.getFrozenRowsCount()) {
         const height = this.state.rowHeights[idx];
         const top = previousBottom + (idx - previousIdx - 1) * rowHeight;
         if(top > containerOffsetTop) {
@@ -206,7 +205,7 @@ class Table extends React.Component {
   }
 
   getNumberOfRowsThatFit(idxFrom) {
-    let currentIdx = idxFrom + 1;
+    let currentIdx = Math.min(this.props.data.length - 1, idxFrom + 1);
     let requiredHeight = 0;
     while(currentIdx < this.props.data.length - 1 && requiredHeight < this.container.offsetHeight) {
       currentIdx++;
@@ -216,9 +215,9 @@ class Table extends React.Component {
   }
 
   getNumberOfColumnsThatFit(idxFrom) {
-    let currentIdx = idxFrom + 1;
+    let currentIdx = Math.min(this.props.data[0].length - 1, idxFrom + 1);
     let requiredWidth = 0;
-    while(currentIdx < this.props.header.length - 1 && requiredWidth < this.container.offsetWidth) {
+    while(currentIdx < this.props.data[0].length - 1 && requiredWidth < this.container.offsetWidth) {
       currentIdx++;
       requiredWidth += this.state.columnWidths[currentIdx] || columnWidth;
     }
@@ -245,12 +244,12 @@ class Table extends React.Component {
 
   // Resizing rows and columns
 
-  onResizeRowHeightStart(rowIndexes) {
-    this.setState({resizedRowIndexes: rowIndexes});
+  onResizeRowHeightStart(rowIdxFrom, rowIdxTo) {
+    this.setState({resizedRowIndexes: range(rowIdxFrom, rowIdxTo)});
   }
 
   onResizeRowHeight(clientY) {
-    const relevantRows = this.state.resizedRowIndexes[0] < this.getFrozenRowsCount() - 1 ? this.frozenRows : this.rows;
+    const relevantRows = this.state.resizedRowIndexes[0] < this.getFrozenRowsCount() ? this.frozenRows : this.rows;
     const newHeight = Math.max(1, clientY - relevantRows[this.state.resizedRowIndexes[0]].getBoundingClientRect().top);
     const newRowHeights = Object.assign({}, this.state.rowHeights);
     let previousHeight = 0;
@@ -258,8 +257,8 @@ class Table extends React.Component {
       previousHeight += this.state.rowHeights[idx] || rowHeight;
       newRowHeights[idx] = newHeight / this.state.resizedRowIndexes.length
     });
-    const frozenRowsHeight = this.state.frozenRowsHeight + (this.state.resizedRowIndexes[this.state.resizedRowIndexes.length - 1] < this.getFrozenRowsCount() - 1 ? newHeight - previousHeight: 0);
-    const virtualHeight = this.state.virtualHeight + (this.state.resizedRowIndexes[0] >= this.getFrozenRowsCount() - 1 ? newHeight - previousHeight : 0);
+    const frozenRowsHeight = this.state.frozenRowsHeight + (this.state.resizedRowIndexes[this.state.resizedRowIndexes.length - 1] < this.getFrozenRowsCount() ? newHeight - previousHeight: 0);
+    const virtualHeight = this.state.virtualHeight + (this.state.resizedRowIndexes[0] >= this.getFrozenRowsCount() ? newHeight - previousHeight : 0);
     this.setState({
       virtualHeight,
       frozenRowsHeight,
@@ -383,7 +382,7 @@ class Table extends React.Component {
   }
 
   moveSelectionHorizontally(toTheRight) {
-    const newColIdx = Math.max(this.getFrozenColumnsCount(), Math.min(this.state.cellsSelection.colIdx.min + (toTheRight ? 1 : -1), this.props.header.length - 1));
+    const newColIdx = Math.max(this.getFrozenColumnsCount(), Math.min(this.state.cellsSelection.colIdx.min + (toTheRight ? 1 : -1), this.props.data[0].length - 1));
     this.setState({
       cellsSelection: {
         rowIdx: {min: this.state.cellsSelection.rowIdx.min, max: this.state.cellsSelection.rowIdx.min, from: this.state.cellsSelection.rowIdx.min},
@@ -394,7 +393,7 @@ class Table extends React.Component {
   }
 
   moveSelectionVertically(down) {
-    const newRowIdx = Math.min(Math.max(this.getFrozenRowsCount() - 1, this.state.cellsSelection.rowIdx.min + (down ? 1 : -1)), this.props.data.length - 1);
+    const newRowIdx = Math.min(Math.max(this.getFrozenRowsCount(), this.state.cellsSelection.rowIdx.min + (down ? 1 : -1)), this.props.data.length - 1);
     this.setState({
       cellsSelection: {
         rowIdx: {min: newRowIdx, max: newRowIdx, from: newRowIdx},
@@ -473,7 +472,7 @@ class Table extends React.Component {
         if(rowIdx < this.props.data.length) {
           r.split('\t').map((value, j) => {
             const displayColIdx = this.state.cellsSelection.colIdx.min + j;
-            if(displayColIdx < this.props.header.length) {
+            if(displayColIdx < this.props.data[0].length) {
               newCells.push({
                 rowIdx,
                 colIdx: this.state.colIdxMapping[displayColIdx],
@@ -503,7 +502,7 @@ class Table extends React.Component {
 
   moveEditionHorizontally(toTheRight) {
     this.cleanEdition();
-    const newColIdx = Math.max(this.getFrozenColumnsCount(), Math.min(this.state.editedCell.colIdx + (toTheRight ? 1 : -1), this.props.header.length - 1));
+    const newColIdx = Math.max(this.getFrozenColumnsCount(), Math.min(this.state.editedCell.colIdx + (toTheRight ? 1 : -1), this.props.data[0].length - 1));
     this.setState({
       editedCell: {
         rowIdx: this.state.editedCell.rowIdx,
@@ -544,17 +543,22 @@ class Table extends React.Component {
   // Utils
 
   getFrozenColumnsCount(props) {
-    if(props === undefined) return (this.props.configuration !== undefined && this.props.configuration.frozenColumnsCount !== undefined) ? this.props.configuration.frozenColumnsCount : 0;
-    return (props.configuration !== undefined && props.configuration.frozenColumnsCount !== undefined) ? props.configuration.frozenColumnsCount : 0;
+    const config = (props === undefined ? this.props : props).configuration;
+    return (config !== undefined && config.frozenColumnsCount !== undefined) ? this.limit(config.frozenColumnsCount, 0, this.props.data[0].length) : 0;
   }
 
   getFrozenRowsCount(props) {
-    if(props === undefined) return (this.props.configuration !== undefined && this.props.configuration.frozenRowsCount !== undefined) ? this.props.configuration.frozenRowsCount : 0;
-    return (props.configuration !== undefined && props.configuration.frozenRowsCount !== undefined) ? props.configuration.frozenRowsCount : 0;
+    const config = (props === undefined ? this.props : props).configuration;
+    return (config !== undefined && config.frozenRowsCount !== undefined) ? this.limit(config.frozenRowsCount, 0, this.props.data.length) : 0;
   }
 
   isColumnMerged(idx) {
-    return (this.props.configuration !== undefined && this.props.configuration.columns !== undefined && this.props.configuration.columns[idx] !== undefined && this.props.configuration.columns[idx].merged !== undefined) ? this.props.configuration.columns[idx].merged : false;
+    const mergedColumnsCount = (this.props.configuration !== undefined && this.props.configuration.mergedColumnsCount !== undefined) ? this.limit(this.props.configuration.mergedColumnsCount, 0, this.getFrozenColumnsCount()) : 0;
+    return  idx < mergedColumnsCount;
+  }
+
+  limit(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 
   // Dom event listeners
@@ -699,17 +703,46 @@ class Table extends React.Component {
 
   // Lifecycle and rendering
   
-  componentWillReceiveProps(nextProps) {
-    if(nextProps.data !== this.props.data) {
-      const liveRows = nextProps.data.slice(this.getFrozenRowsCount(nextProps));
-      const frozenRows = nextProps.data.slice(0, this.getFrozenRowsCount(nextProps));
-      this.setState({
-        frozenRows,
-        liveHeaders: liveRows[0].slice(this.getFrozenColumnsCount(nextProps)),
-        frozenHeaders: liveRows[0].slice(0, this.getFrozenColumnsCount(nextProps)),
-        liveRows,
-        data: frozenRows.concat(liveRows.slice(this.state.topIdx, this.state.topIdx + this.getNumberOfRowsThatFit(this.state.topIdx || 0)))
-      });
+  componentDidUpdate(prevProps) {
+    if(prevProps.configuration !== this.props.configuration) {
+      const prevFrozenRowsCount = this.getFrozenRowsCount(prevProps);
+      const frozenRowsCount = this.getFrozenRowsCount();
+      if(prevFrozenRowsCount !== frozenRowsCount) {
+        let frozenRowsHeight = this.state.frozenRowsHeight;
+        let virtualHeight = this.state.virtualHeight;
+        const reverse = prevFrozenRowsCount < frozenRowsCount;
+        for(let i = Math.min(frozenRowsCount, prevFrozenRowsCount); i < Math.max(frozenRowsCount, prevFrozenRowsCount); i++) {
+          const height = this.state.rowHeights[i] || rowHeight;
+          if(reverse) {
+            frozenRowsHeight += height;
+            virtualHeight -= height;
+          }
+          else {
+            frozenRowsHeight -= height;
+            virtualHeight += height;
+          }
+        }
+        this.setState({frozenRowsHeight, virtualHeight}, () => this.onVerticalScroll(this.verticalScroll, true));
+      }
+      const prevFrozenColumnsCount = this.getFrozenColumnsCount(prevProps);
+      const frozenColumnsCount = this.getFrozenColumnsCount();
+      if(prevFrozenColumnsCount !== frozenColumnsCount) {
+        let frozenColumnsWidth = this.state.frozenColumnsWidth;
+        let virtualWidth = this.state.virtualWidth;
+        const reverse = prevFrozenColumnsCount < frozenColumnsCount;
+        for(let i = Math.min(frozenColumnsCount, prevFrozenColumnsCount); i < Math.max(frozenColumnsCount, prevFrozenColumnsCount); i++) {
+          const width = this.state.columnWidths[this.state.colIdxMapping[i]] || columnWidth;
+          if(reverse) {
+            frozenColumnsWidth += width;
+            virtualWidth -= width;
+          }
+          else {
+            frozenColumnsWidth -= width;
+            virtualWidth += width;
+          }
+        }
+        this.setState({frozenColumnsWidth, virtualWidth}, () => this.onHorizontalScroll(this.horizontalScroll, true));
+      }
     }
   }
 
@@ -718,8 +751,8 @@ class Table extends React.Component {
     document.addEventListener('mouseup', this.onMouseUp);
     document.addEventListener('mousemove', this.onMouseMove);
     this.setState({
-      topRowIdx: this.getFrozenRowsCount() - 1,
-      bottomRowIdx: this.getFrozenRowsCount() - 1 + this.getNumberOfRowsThatFit(this.getFrozenRowsCount() - 1),
+      topRowIdx: this.getFrozenRowsCount(),
+      bottomRowIdx: this.getFrozenRowsCount() + this.getNumberOfRowsThatFit(this.getFrozenRowsCount()),
       leftColIdx: this.getFrozenColumnsCount(),
       rightColIdx: this.getFrozenColumnsCount() + this.getNumberOfColumnsThatFit(this.getFrozenColumnsCount())
     });
@@ -739,7 +772,6 @@ class Table extends React.Component {
         frozen={area !== areas.bottom.right}
         displayColIdx={colIdx}
         dataColIdx={this.state.colIdxMapping[colIdx]}
-        header={this.props.header}
         data={this.props.data}
         topRowIdx={topRowIdx}
         bottomRowIdx={bottomRowIdx}
@@ -791,7 +823,7 @@ class Table extends React.Component {
           width: this.state.frozenColumnsWidth,
           zIndex: 3,
         }}>
-          {this.renderArea(0, this.getFrozenColumnsCount(), - 1, this.getFrozenRowsCount() - 1, areas.top.left) /* top left : frozen rows and frozen columns */}
+          {this.renderArea(0, this.getFrozenColumnsCount(), 0, this.getFrozenRowsCount(), areas.top.left) /* top left : frozen rows and frozen columns */}
         </div>
         <div 
           ref={elt => this.frozenColumnsContainer = elt}
@@ -827,7 +859,7 @@ class Table extends React.Component {
           }}
         >
           <div style={{height: '100%', width: this.state.virtualWidth, position: 'relative', left: this.state.offsetLeft}}>
-            {this.renderArea(this.state.leftColIdx, this.state.rightColIdx, - 1, this.getFrozenRowsCount() - 1, areas.top.right) /* top right : frozen rows but normal columns */}
+            {this.renderArea(this.state.leftColIdx, this.state.rightColIdx, 0, this.getFrozenRowsCount(), areas.top.right) /* top right : frozen rows but normal columns */}
           </div>
         </div>
         <div 
@@ -855,7 +887,7 @@ class Table extends React.Component {
             guideStyle={this.props.guideStyle}
             handleStyle={this.props.handleStyle}
           >
-            <div style={{height: '100%', width: this.state.virtualWidth, position: 'relative', top: this.state.offsetTop, left: this.state.offsetLeft, borderBottom: '1px solid #b3b3b3'}}>
+            <div style={{height: '100%', width: this.state.virtualWidth, position: 'relative', top: this.state.offsetTop, left: this.state.offsetLeft}}>
               {this.renderArea(this.state.leftColIdx, this.state.rightColIdx, this.state.topRowIdx, this.state.bottomRowIdx, areas.bottom.right) /* bottom right : normal rows and normal columns */}
             </div>
           </Scroller>

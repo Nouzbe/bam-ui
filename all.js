@@ -2,7 +2,7 @@ const fs = require('fs');
 const spawn = require('cross-spawn');
 const serial = require('promise-serial');
 
-const ignored = ['node_modules', '.git'];
+const ignored = ['node_modules', '.git', 'example'];
 
 const dirs = fs.readdirSync(__dirname).filter(f => ignored.indexOf(f) === -1 && fs.statSync(`${__dirname}/${f}`).isDirectory());
 

@@ -51,7 +51,7 @@ class Cell extends React.Component {
     onResizeHeightStart(e) {
         if(e.button === 0) {
             e.stopPropagation();
-            this.props.onResizeHeightStart(this.props.rowIndexes);
+            this.props.onResizeHeightStart(this.props.rowIdxFrom, this.props.rowIdxTo);
         }
     }
 
@@ -61,22 +61,22 @@ class Cell extends React.Component {
                 this.props.onMoveStart();
             }
             else if(!this.props.isEdited && this.props.onSelectCellsStart) {
-                this.props.onSelectCellsStart(this.props.rowIdx, e)
+                this.props.onSelectCellsStart(this.props.rowIdxFrom, e)
             }
         }
     }
 
     componentWillReceiveProps(nextProps) {
-        this.props.rows !== undefined && nextProps.rows === undefined ? delete this.props.rows[this.props.rowIdx] : undefined;
-        this.props.rows === undefined && nextProps.rows !== undefined ? nextProps.rows[this.props.rowIdx] = this.container : undefined;
+        this.props.rows !== undefined && nextProps.rows === undefined ? delete this.props.rows[this.props.rowIdxFrom] : undefined;
+        this.props.rows === undefined && nextProps.rows !== undefined ? nextProps.rows[this.props.rowIdxFrom] = this.container : undefined;
     }
 
     componentDidMount() {
-        this.props.rows !== undefined ? this.props.rows[this.props.rowIdx] = this.container : undefined;
+        this.props.rows !== undefined ? this.props.rows[this.props.rowIdxFrom] = this.container : undefined;
     }
 
     componentWillUnmount() {
-        this.props.rows !== undefined && this.props.rows[this.props.rowIdx] === this.container ? delete this.props.rows[this.props.rowIdx] : undefined;
+        this.props.rows !== undefined && this.props.rows[this.props.rowIdxFrom] === this.container ? delete this.props.rows[this.props.rowIdxFrom] : undefined;
     }
     
     render() {
@@ -85,7 +85,7 @@ class Cell extends React.Component {
                 ref={elt => this.container = elt}
                 className={style('bt-cell-container')}
                 onMouseDown={this.onMouseDown}
-                onDoubleClick={e => e.button === 0 ? this.props.onEdit(this.props.rowIdx) : null}
+                onDoubleClick={e => e.button === 0 ? this.props.onEdit(this.props.rowIdxFrom) : null}
                 style={{
                     height: `${this.props.height}px`,  
                     backgroundColor: this.props.frozen ? '#e6e6e6' : this.props.isSelected ? constants.selectHintColor : '#fff'

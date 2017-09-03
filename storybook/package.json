@@ -1,0 +1,30 @@
+{
+  "name": "bam-storybook",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "start": "start-storybook -p 3000 -c .storybook",
+    "build": "build-storybook -c .storybook -o .out",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "author": "bam",
+  "license": "ISC",
+  "peerDependencies": {},
+  "dependencies": {
+    "bam-scroller": "^1.0.1",
+    "bam-table": "^1.0.1",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1"
+  },
+  "devDependencies": {
+    "@storybook/addon-actions": "^3.2.6",
+    "@storybook/addon-knobs": "^3.2.8",
+    "@storybook/addon-links": "^3.2.6",
+    "@storybook/addon-options": "^3.2.6",
+    "@storybook/react": "^3.2.8",
+    "raw-loader": "^0.5.1",
+    "storybook-readme": "^3.0.6"
+  }
+}

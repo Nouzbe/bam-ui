@@ -150,7 +150,7 @@ class Scroller extends React.Component {
                     guideWidth={thickness}
                     container={this.container}
                     handleSize={Math.max(minHandleSize, this.state.verticalHandleHeight) * this.container.offsetHeight / 100}
-                    guideStyle={Object.assign(this.props.guideStyle || {}, {float: 'left'})}
+                    guideStyle={Object.assign({float: 'left'}, this.props.guideStyle || {})}
                     handleStyle={this.props.handleStyle || {}}
                     value={this.state.verticalScroll}
                     onValueChange={this.onVerticalScroll}

@@ -39,7 +39,7 @@ class ScrollBar extends React.Component {
         else if(((this.props.horizontal && e.shiftKey) || (!this.props.horizontal && !e.shiftKey)) && this.props.visible) {
             e.stopPropagation();
             e.preventDefault();
-            const value =  this.props.value + this.props.sensitivity * e.deltaY;
+            const value =  this.props.value + this.props.sensitivity * e.deltaY * (navigator.userAgent.indexOf('Firefox') !== -1 ? 50 : 1);
             this.delegate(value, true);
         }
     }

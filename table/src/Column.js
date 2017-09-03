@@ -25,8 +25,8 @@ class Column extends React.Component {
         this.props.onResizeWidthStart(this.props.displayColIdx);
     }
 
-    onResizeHeightStart(rowIndexes) {
-        this.props.onResizeHeightStart(rowIndexes);
+    onResizeHeightStart(rowIdxFrom, rowIdxTo) {
+        this.props.onResizeHeightStart(rowIdxFrom, rowIdxTo);
     }
 
     onMoveStart() {
@@ -59,7 +59,7 @@ class Column extends React.Component {
     findNextIdx(from, reverse) {
         let i = from + (reverse ? -1 : 1);
         let height = reverse ? 0 : this.props.rowHeights[from] || this.props.defaultRowHeight;
-        while(i >= 0 && i < this.props.data.length) {
+        while(i > 0 && i < this.props.data.length - 1) {
             if(this.isDifferent(i, from)) return [i, height];
             height += this.props.rowHeights[i] || this.props.defaultRowHeight;
             reverse ? i-- : i++
@@ -74,7 +74,8 @@ class Column extends React.Component {
     getRowRange() {
         if(this.props.isMerged !== true || this.props.bottomRowIdx <= this.props.topRowIdx + 1) {
             const result = range(this.props.topRowIdx, this.props.bottomRowIdx).map(i => ({
-                indexes: [i],
+                indexFrom: i,
+                indexTo: i + 1,
                 height: this.props.rowHeights[i] || this.props.defaultRowHeight
             }));
             return result;
@@ -86,7 +87,7 @@ class Column extends React.Component {
             idx += 1;
             while(idx < this.props.bottomRowIdx) {
                 const [nextIdx, nextHeight] = this.findNextIdx(idx);
-                result.push({indexes: range(idx, nextIdx), height: nextHeight});
+                result.push({indexFrom: idx, indexTo: nextIdx, height: nextHeight});
                 idx = nextIdx;
             }
             return result;
@@ -101,22 +102,21 @@ class Column extends React.Component {
         this.props.columns !== undefined ? delete this.props.columns[this.props.displayColIdx] : undefined;
     }
 
-    renderCell(indexes, height) {
-        const rowIdx = indexes[0];
+    renderCell(cell) {
         let isSelected = false;
         let isTopOfSelection = false;
         let isBottomOfSelection = false;
         if (this.props.selectedRowsIdx !== undefined) {
-            isSelected = this.props.selectedRowsIdx.min <= rowIdx && rowIdx <= this.props.selectedRowsIdx.max;
-            isTopOfSelection = this.props.selectedRowsIdx.min === rowIdx;
-            isBottomOfSelection = this.props.selectedRowsIdx.max === rowIdx;
+            isSelected = this.props.selectedRowsIdx.min <= cell.indexFrom && cell.indexFrom <= this.props.selectedRowsIdx.max;
+            isTopOfSelection = this.props.selectedRowsIdx.min === cell.indexFrom;
+            isBottomOfSelection = this.props.selectedRowsIdx.max === cell.indexFrom;
         }
         return <Cell 
-            key={`cell-${this.props.dataColIdx}-${rowIdx}`}
-            cell={(rowIdx >= 0 ? this.props.data[rowIdx] : this.props.header)[this.props.dataColIdx]}
-            rowIdx={rowIdx}
-            rowIndexes={indexes}
-            height={height}
+            key={`cell-${this.props.dataColIdx}-${cell.indexFrom}`}
+            cell={this.props.data[cell.indexFrom][this.props.dataColIdx]}
+            rowIdxFrom={cell.indexFrom}
+            rowIdxTo={cell.indexTo}
+            height={cell.height}
             frozen={this.props.frozen}
             onResizeHeightStart={this.onResizeHeightStart}
             onResizeWidthStart={this.onResizeWidthStart}
@@ -129,8 +129,8 @@ class Column extends React.Component {
             isLeftOfSelection={isSelected && this.props.isLeftOfSelection}
             isRightOfSelection={isSelected && this.props.isRightOfSelection}
             onEdit={this.onEdit}
-            isEdited={this.props.editedRowIdx === rowIdx}
-            userInput={this.props.editedRowIdx === rowIdx ? this.props.userInput : undefined}
+            isEdited={this.props.editedRowIdx === cell.indexFrom}
+            userInput={this.props.editedRowIdx === cell.indexFrom ? this.props.userInput : undefined}
             onChange={this.props.onChange}
 
             rows={this.props.rows}            
@@ -145,7 +145,7 @@ class Column extends React.Component {
         const rowRange = this.getRowRange();
         return (
             <div className={style('bt-column')} style={{width: this.props.columnWidths[this.props.dataColIdx] || this.props.defaultWidth}} ref={elt => this.container = elt}>
-                {rowRange.map(cell => this.renderCell(cell.indexes, cell.height))}
+                {rowRange.map(cell => this.renderCell(cell))}
                 <TranslucentLayer visible={this.props.isMoving} style={{width: this.props.columnWidth, background: constants.moveHintColor, zIndex: 5}}/>
                 <FloatingBorder left visible={this.props.isMoveTarget} offset={0} color={constants.moveHintBorderColor} width={2}/>
             </div>
